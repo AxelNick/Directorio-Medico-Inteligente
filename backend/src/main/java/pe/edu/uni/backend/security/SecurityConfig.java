@@ -3,6 +3,7 @@ package pe.edu.uni.backend.security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -29,13 +30,15 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable()) // Desactivar CSRF para APIs REST
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Sin sesiones
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**").permitAll() // Rutas públicas
-                .requestMatchers("/uploads/**").permitAll() // Fotografías de perfil (públicas en el directorio)
-                .requestMatchers("/medicos/me/**").hasRole("MEDICO") // Autogestión: solo médicos
-                .anyRequest().authenticated() // Todo lo demás requiere token
+                .requestMatchers("/auth/**").permitAll() // Rutas publicas de autenticacion
+                .requestMatchers("/uploads/**").permitAll() // Fotografias de perfil
+                .requestMatchers(HttpMethod.GET, "/especialidades").permitAll() // Catalogo de especialidades activas
+                .requestMatchers("/admin/**").hasRole("ADMIN") // US-ADM-01/03/04: Modulos administrativos
+                .requestMatchers("/medicos/me/**").hasRole("MEDICO") // Autogestion: solo medicos
+                .anyRequest().authenticated() // Todo lo demas requiere token
             );
             
-        // Insertar nuestro filtro JWT antes del filtro estándar de Spring
+        // Insertar nuestro filtro JWT antes del filtro estandar de Spring
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
