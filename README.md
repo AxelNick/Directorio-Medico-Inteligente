@@ -56,7 +56,7 @@ Empodera a los profesionales de la salud brindándoles herramientas de autogesti
 
 ```text
 sistema-citas-medicas/
-├── docker-compose.yml          # Servicio de PostgreSQL para desarrollo local
+├── docker-compose.yml          # PostgreSQL, backend y frontend en contenedores
 ├── README.md                   # Documentación principal del repositorio
 ├── .gitignore                  # Exclusión de archivos binarios y temporales
 ├── .env.example                # Variables de entorno de ejemplo (DB, JWT, LLM Key)
@@ -67,6 +67,22 @@ sistema-citas-medicas/
 ├── backend/                    # Proyecto Spring Boot (Java 21)
 └── frontend/                   # Proyecto React + TypeScript (Tailwind CSS)
 ```
+
+## Ejecución rápida con Docker (todo en contenedores)
+
+Solo necesitas Docker y Docker Compose. Desde la raíz del repositorio:
+
+```bash
+docker compose up --build
+```
+
+* Frontend: http://localhost:5173
+* API: http://localhost:8080 (Swagger UI en http://localhost:8080/swagger-ui.html)
+* PostgreSQL: `localhost:5433` (usuario `usuario_medico`, contraseña `password123`)
+
+La primera construcción descarga Maven y npm, así que tarda varios minutos. Para detener todo: `docker compose down` (agrega `-v` para borrar también la base de datos y las fotos).
+
+Para desarrollar con recarga en caliente, levanta solo la base de datos (`docker compose up -d db`) y sigue los pasos manuales de abajo.
 
 ## Requisitos Previos e Instalación
 
