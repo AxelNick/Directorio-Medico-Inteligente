@@ -31,10 +31,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             if (jwtUtils.validarToken(token)) {
                 String username = jwtUtils.extraerUsername(token);
+                String rol = jwtUtils.extraerRol(token);
+                if (rol == null || rol.isBlank()) {
+                    rol = "ROLE_MEDICO";
+                }
                 
-                // Creamos la autenticación para Spring Security
+                // Creamos la autenticacion para Spring Security con el rol real del token
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        username, null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_MEDICO"))
+                        username, null, Collections.singletonList(new SimpleGrantedAuthority(rol))
                 );
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }

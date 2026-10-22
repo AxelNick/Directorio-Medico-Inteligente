@@ -30,6 +30,11 @@ public class JwtUtils {
         return getClaims(token).getSubject();
     }
 
+    public String extraerRol(String token) {
+        Object rol = getClaims(token).get("rol");
+        return rol != null ? rol.toString() : null;
+    }
+
     public boolean validarToken(String token) {
         try {
             getClaims(token);
