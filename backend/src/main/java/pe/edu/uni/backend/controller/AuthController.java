@@ -1,10 +1,15 @@
 package pe.edu.uni.backend.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import pe.edu.uni.backend.dto.RegistroMedicoRequest;
+import pe.edu.uni.backend.dto.RegistroMedicoResponse;
 import pe.edu.uni.backend.security.JwtUtils;
+import pe.edu.uni.backend.service.MedicoService;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,17 +24,14 @@ public class AuthController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private MedicoService medicoService;
+
+    /** US-MED-01/03: crea usuario + perfil médico con colegiatura PENDIENTE_VERIFICACION. */
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody Map<String, String> request) {
-        String username = request.get("username");
-        String password = request.get("password");
-        
-        // Aquí en el futuro guardarás usando el UsuarioRepository
-        String passwordHasheada = passwordEncoder.encode(password);
-        
-        Map<String, String> response = new HashMap<>();
-        response.put("mensaje", "Médico registrado exitosamente con password: " + passwordHasheada);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<RegistroMedicoResponse> register(@Valid @RequestBody RegistroMedicoRequest request) {
+        RegistroMedicoResponse creado = medicoService.registrar(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 
     @PostMapping("/login")

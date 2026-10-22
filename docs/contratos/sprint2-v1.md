@@ -1,6 +1,6 @@
 # Sprint 2 — contrato propuesto para integrar el frontend
 
-**Estado:** contrato HTTP por acordar con backend. Las rutas de perfil, centros y especialidades **no existen** en el backend actual. El frontend funciona en desarrollo con un adaptador de datos ficticios; producción usa el cliente HTTP. [Historias del WBS](../wbs-taiga.md): US-MED-01 a 05, US-ADM-01 y US-ADM-03.
+**Estado:** las rutas de registro, perfil, foto y centros (`POST /auth/register`, `/medicos/me/**`) **ya están implementadas** en backend según este contrato (migración Flyway `V2__crear_tablas_dominio_medico.sql`, entidades `Medico`, `CentroAtencion`, `Especialidad`, servicio `MedicoService` y controlador `MedicoController`). Siguen pendientes `GET /auth/me`, el login contra base de datos y el catálogo `/especialidades` y `/admin/especialidades`. El frontend funciona en desarrollo con un adaptador de datos ficticios; producción usa el cliente HTTP. [Historias del WBS](../wbs-taiga.md): US-MED-01 a 05, US-ADM-01 y US-ADM-03.
 
 ## Cuentas y datos de prueba del frontend
 

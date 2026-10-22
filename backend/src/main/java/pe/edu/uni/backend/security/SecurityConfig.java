@@ -30,6 +30,8 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Sin sesiones
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**").permitAll() // Rutas públicas
+                .requestMatchers("/uploads/**").permitAll() // Fotografías de perfil (públicas en el directorio)
+                .requestMatchers("/medicos/me/**").hasRole("MEDICO") // Autogestión: solo médicos
                 .anyRequest().authenticated() // Todo lo demás requiere token
             );
             
