@@ -60,7 +60,7 @@ export function AuditDemoPage() {
             <div>
               <p className="eyebrow">SPRINT 1 · DEMOSTRACIÓN LOCAL</p>
               <h1 className="mt-3 text-[clamp(2.2rem,4vw,3.7rem)] font-bold tracking-[-.055em] text-[#173454]">Registro de auditoría</h1>
-              <p className="mt-3 max-w-[650px] text-sm leading-7 text-[#5f7683]">Vista de consulta para cambios en perfiles. Los registros siguientes son ficticios y permiten revisar la interfaz antes de integrar la API y el acceso administrativo.</p>
+              <p className="mt-3 max-w-[650px] text-sm leading-7 text-[#5f7683]">Explora cambios ficticios en perfiles para revisar la tabla, su paginación y sus estados.</p>
             </div>
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[#a9ded9] bg-[#eaf8f6] px-4 py-2 text-xs font-bold text-[#087c7d]"><Icon name="shield" className="h-4 w-4" /> Datos de demostración</div>
           </div>
@@ -86,7 +86,7 @@ export function AuditDemoPage() {
             </div>
             {status === 'ready' && count > 0 && <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#e5eeee] px-5 py-5 sm:px-7"><p className="text-xs font-medium text-[#687e89]">Página {page + 1} de {pageCount} · {count} registros de ejemplo</p><div className="flex gap-2"><button type="button" onClick={() => { setStatus('loading'); setPage(page - 1) }} disabled={page === 0} className="rounded-full border border-[#cfe1e2] px-4 py-2 text-xs font-bold text-[#1E3A5F] enabled:hover:bg-[#eaf7f6] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-3 focus-visible:outline-[#0F8B8D]">Anterior</button><button type="button" onClick={() => { setStatus('loading'); setPage(page + 1) }} disabled={page + 1 >= pageCount} className="rounded-full border border-[#cfe1e2] px-4 py-2 text-xs font-bold text-[#1E3A5F] enabled:hover:bg-[#eaf7f6] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-3 focus-visible:outline-[#0F8B8D]">Siguiente</button></div></div>}
           </section>
-          <p className="mt-6 max-w-[800px] text-xs leading-6 text-[#738994]">La captura AOP, la API de auditoría y la protección con <code>ROLE_ADMIN</code> no están implementadas en este frontend. Esta demostración no envía datos ni consulta al backend.</p>
+          <p className="mt-6 max-w-[800px] text-xs leading-6 text-[#738994]">Todos los eventos de esta vista son inventados y permanecen en el navegador.</p>
         </main>
       </div>
     </>

@@ -59,9 +59,9 @@ export function LandingPage() {
               <p className="eyebrow">EXPLORA POR ESPECIALIDAD</p>
               <h2 id="specialty-title" className="mt-3 max-w-[690px] text-[clamp(2rem,4vw,3.4rem)] leading-[1.12] font-bold tracking-[-.05em] text-[#173454]">Cada necesidad merece un buen punto de partida.</h2>
             </div>
-            <span className="inline-flex w-fit items-center gap-2 rounded-full bg-[#eaf7f6] px-4 py-2 text-xs font-bold text-[#087c7d]"><Icon name="clock" className="h-4 w-4" /> Catálogo disponible próximamente</span>
+            <span className="inline-flex w-fit items-center gap-2 rounded-full bg-[#eaf7f6] px-4 py-2 text-xs font-bold text-[#087c7d]"><Icon name="clock" className="h-4 w-4" /> Especialidades ilustrativas</span>
           </div>
-          <p className="mt-4 max-w-[670px] text-[15px] leading-7 text-[#667d8b]">Estas son algunas especialidades a modo de ejemplo. La lista oficial y los perfiles aparecerán cuando el catálogo esté conectado.</p>
+          <p className="mt-4 max-w-[670px] text-[15px] leading-7 text-[#667d8b]">Estas categorías ilustran cómo podrás explorar el directorio. La búsqueda pública forma parte de otra etapa.</p>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {specialties.map((item) => (
               <article key={item.title} className="specialty-card group rounded-[24px] border border-[#e1ecee] bg-white p-6 shadow-[0_18px_50px_-38px_#173454]">
@@ -95,8 +95,8 @@ export function LandingPage() {
             <div className="relative z-10 max-w-[640px]">
               <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[#8ce2de]">PARA PROFESIONALES DE SALUD</p>
               <h2 id="doctor-title" className="mt-4 text-[clamp(2rem,4vw,3.65rem)] leading-[1.1] font-bold tracking-[-.05em]">Tu experiencia merece un espacio propio.</h2>
-              <p className="mt-5 max-w-[580px] text-[15px] leading-7 text-[#d4e4eb]">Próximamente podrás registrarte y gestionar tu presentación profesional, colegiatura, especialidades y centros de atención desde un mismo lugar.</p>
-              <span className="mt-8 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-5 py-3 text-sm font-bold text-white"><Icon name="clock" className="h-4 w-4 text-[#8ce2de]" /> Registro disponible en Sprint 2</span>
+              <p className="mt-5 max-w-[580px] text-[15px] leading-7 text-[#d4e4eb]">Regístrate y gestiona tu presentación profesional, colegiatura, especialidades y centros de atención desde un mismo lugar.</p>
+              <a href="/registro/medico" className="mt-8 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-5 py-3 text-sm font-bold text-white hover:bg-white/20"><Icon name="arrow" className="h-4 w-4 text-[#8ce2de]" /> Regístrate como médico</a>
             </div>
             <div className="relative z-10 mt-12 flex justify-center lg:mt-0 lg:justify-end" aria-hidden="true">
               <div className="profile-preview w-full max-w-[330px] rounded-[24px] bg-white p-5 text-[#173454] shadow-[0_30px_70px_-35px_#001a30]">
