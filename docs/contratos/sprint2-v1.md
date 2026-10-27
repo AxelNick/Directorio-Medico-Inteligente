@@ -1,6 +1,6 @@
 # Sprint 2 — contrato propuesto para integrar el frontend
 
-**Estado:** las rutas de registro, perfil, foto y centros (`POST /auth/register`, `/medicos/me/**`) **ya están implementadas** en backend según este contrato (migración Flyway `V2__crear_tablas_dominio_medico.sql`, entidades `Medico`, `CentroAtencion`, `Especialidad`, servicio `MedicoService` y controlador `MedicoController`). Siguen pendientes `GET /auth/me`, el login contra base de datos y el catálogo `/especialidades` y `/admin/especialidades`. El frontend funciona en desarrollo con un adaptador de datos ficticios; producción usa el cliente HTTP. [Historias del WBS](../wbs-taiga.md): US-MED-01 a 05, US-ADM-01 y US-ADM-03.
+**Estado:** el código backend incluye registro médico y de paciente, login contra usuarios, `GET /auth/me`, perfil, centros y catálogo. El flujo de paciente se probó localmente contra PostgreSQL; la integración HTTP completa del resto de Sprint 2 aún no se ha verificado. El frontend funciona en desarrollo con un adaptador de datos ficticios; producción usa el cliente HTTP. El [registro de paciente](registro-paciente-v1.md) tiene contrato separado. [Historias del WBS](../wbs-taiga.md): US-MED-01 a 05, US-ADM-01 y US-ADM-03.
 
 ## Cuentas y datos de prueba del frontend
 
@@ -12,9 +12,9 @@ Estas credenciales son **públicas, inventadas y solo para el adaptador local de
 | Administrador | `admin.demo@prueba.local` | `AdminDemo2026!` |
 | Paciente | `paciente.demo@prueba.local` | `PacienteDemo2026!` |
 
-Con `npm run dev`, el frontend usa el adaptador ficticio de forma predeterminada: login, registro médico temporal, perfil, foto, centros y catálogo funcionan sin llamar a Spring Boot. La cuenta de paciente abre `/paciente`, una pantalla local sin citas ni historia inventada; su alta real queda fuera de este contrato de Sprint 2. El registro temporal y su contraseña viven solo en memoria hasta recargar; los cambios de las cuentas fijas se guardan en `localStorage` bajo `directorio-medico-sprint2-demo-v1`. No introducir datos personales reales en este modo. El distintivo **Entorno de prueba** identifica estas pantallas. La compilación de producción excluye credenciales y datos ficticios.
+Con `npm run dev`, el frontend usa el adaptador ficticio de forma predeterminada: login, registros temporales de médico y paciente, perfil, foto, centros y catálogo funcionan sin llamar a Spring Boot. La cuenta de paciente abre `/paciente`, una pantalla sin citas ni historia inventada; su alta real se describe en el [contrato de paciente](registro-paciente-v1.md). Los registros temporales y sus contraseñas viven solo en memoria hasta recargar; los cambios de las cuentas fijas se guardan en `localStorage` bajo `directorio-medico-sprint2-demo-v1`. No introducir datos personales reales en este modo. El distintivo **Entorno de prueba** identifica estas pantallas. La compilación de producción excluye credenciales y datos ficticios.
 
-Para probar el contrato HTTP desde PowerShell en `frontend/`: `$env:VITE_DATA_SOURCE = 'api'; npm run dev`. El proxy Vite envía `/api/*` a `http://127.0.0.1:8080/*`. Al terminar: `Remove-Item Env:VITE_DATA_SOURCE`. El backend actual todavía devuelve JWT para usuarios inexistentes; en modo HTTP el frontend exige además `GET /auth/me` antes de abrir un área privada.
+Para probar el contrato HTTP desde PowerShell en `frontend/`: `$env:VITE_DATA_SOURCE = 'api'; npm run dev`. El proxy Vite envía `/api/*` a `http://127.0.0.1:8080/*`. Al terminar: `Remove-Item Env:VITE_DATA_SOURCE`. En modo HTTP el frontend exige `GET /auth/me` antes de abrir un área privada.
 
 ## Acceso y sesión
 
@@ -22,7 +22,7 @@ Para probar el contrato HTTP desde PowerShell en `frontend/`: `$env:VITE_DATA_SO
 | --- | --- |
 | `POST /auth/register` | `{ "username": "correo", "password": "...", "colegiatura": "..." }` → `201` con `{ "id": 1, "username": "correo", "estadoColegiatura": "PENDIENTE_VERIFICACION" }`. Solo crea médico; el cliente no envía el rol. Nunca devolver hash ni contraseña. |
 | `POST /auth/login` | `{ "username": "correo", "password": "..." }` → `200` con `{ "token": "JWT" }`; `401` para credenciales inválidas, incluidas cuentas inexistentes. |
-| `GET /auth/me` | Con `Authorization: Bearer <JWT>` → `{ "username": "correo", "rol": "ROLE_MEDICO" }` o `ROLE_ADMIN`. El cliente acepta también `ROLE_PACIENTE` cuando exista su alta real. Confirmar identidad y rol desde datos confiables del servidor; `401` si el token ya no vale. |
+| `GET /auth/me` | Con `Authorization: Bearer <JWT>` → `{ "username": "correo", "rol": "ROLE_MEDICO" }`, `ROLE_ADMIN` o `ROLE_PACIENTE`. El filtro comprueba que el usuario siga habilitado y toma el rol vigente de la base; una cuenta deshabilitada devuelve `401` en esta ruta. |
 
 El frontend guarda solo el token en `sessionStorage` durante la pestaña. Al recargar consulta de nuevo `GET /auth/me` y elimina el token si falla; **Inicio → Mi área** regresa al panel del rol activo. Al salir elimina el token. En la demo, las cuentas fijas se revalidan localmente; una cuenta médica recién registrada deja de existir al recargar. Acordar expiración de JWT, tratamiento de sesión en producción y provisión segura del administrador. La V1 aplicada contiene una cuenta/clave de ejemplo que no debe usarse como cuenta real.
 

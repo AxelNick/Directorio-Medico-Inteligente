@@ -20,8 +20,9 @@ if (import.meta.env.DEV && window.location.pathname === '/demo/auditoria') {
 } else {
   createRoot(root).render(<StrictMode><BrowserRouter><SessionProvider><ScrollToTop /><Routes>
     <Route path="/" element={<LandingPage />} />
-    <Route path="/ingresar" element={<AuthPage mode="login" />} />
-    <Route path="/registro/medico" element={<AuthPage mode="register" />} />
+    <Route path="/ingresar" element={<AuthPage key="login" mode="login" />} />
+    <Route path="/registro/medico" element={<AuthPage key="registerDoctor" mode="registerDoctor" />} />
+    <Route path="/registro/paciente" element={<AuthPage key="registerPatient" mode="registerPatient" />} />
     <Route path="/medico" element={<Protected role="ROLE_MEDICO"><DoctorPage /></Protected>} />
     <Route path="/admin" element={<Protected role="ROLE_ADMIN"><AdminPage /></Protected>} />
     <Route path="/paciente" element={<Protected role="ROLE_PACIENTE"><PatientPage /></Protected>} />

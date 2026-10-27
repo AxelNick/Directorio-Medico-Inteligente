@@ -1,6 +1,6 @@
-# US-ADM-04: contrato propuesto de consulta de auditoría
+# US-ADM-04: contrato de consulta de auditoría
 
-**Estado:** propuesta para revisión; no implementado ni validado con backend. **Fuente de alcance:** [WBS, US-ADM-04](../wbs-taiga.md) y [tareas backend de Sprint 1](../SPRINT_1_BACKEND.md). El tipo correspondiente en frontend está en [`frontend/src/data/audit.ts`](../../frontend/src/data/audit.ts).
+**Estado:** el backend contiene aspecto AOP, repositorio y `GET /admin/auditoria`; la integración funcional completa aún no se ha verificado. **Fuente de alcance:** [WBS, US-ADM-04](../wbs-taiga.md) y [tareas backend de Sprint 1](SPRINT_1_BACKEND.md). El tipo correspondiente en frontend está en [`frontend/src/data/audit.ts`](../../frontend/src/data/audit.ts).
 
 ## Solicitud
 

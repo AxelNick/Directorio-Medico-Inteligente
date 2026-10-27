@@ -47,11 +47,32 @@ try {
 
   await mockApi.register('nuevo.demo@prueba.local', 'ClaveTemporal2026!', 'CMP-DEMO-999')
   assert.equal((await mockApi.login('nuevo.demo@prueba.local', 'ClaveTemporal2026!')).rol, 'ROLE_MEDICO')
+  await mockApi.registerPatient('nuevo.paciente@prueba.local', 'PacienteTemporal2026!')
+  const newPatient = await mockApi.login('nuevo.paciente@prueba.local', 'PacienteTemporal2026!')
+  assert.equal(newPatient.rol, 'ROLE_PACIENTE')
+  assert.deepEqual(await mockApi.resume(newPatient.token), newPatient)
+  await assert.rejects(mockApi.registerPatient('nuevo.demo@prueba.local', 'PacienteTemporal2026!'), { status: 409 })
+  await assert.rejects(mockApi.register('nuevo.paciente@prueba.local', 'ClaveTemporal2026!', 'CMP-DEMO-998'), { status: 409 })
+  await assert.rejects(mockApi.registerPatient('sin-correo', 'PacienteTemporal2026!'), { status: 400 })
+  await assert.rejects(mockApi.listAdminSpecialties(newPatient.token), { status: 403 })
   const persisted = values.get('directorio-medico-sprint2-demo-v1')
   assert.ok(persisted)
   assert.ok(!persisted.includes('ClaveTemporal2026!'))
   assert.ok(!persisted.includes('nuevo.demo@prueba.local'))
-  process.stdout.write('Demo Sprint 2: tres roles, revalidación de sesión, perfil, centros, catálogo y registro temporal correctos; sin llamadas de red\n')
+  assert.ok(!persisted.includes('nuevo.paciente@prueba.local'))
+  assert.ok(!persisted.includes('PacienteTemporal2026!'))
+
+  const { api } = await vite.ssrLoadModule('/src/data/api.ts')
+  globalThis.fetch = async (url, init) => {
+    assert.equal(url, '/api/auth/register/paciente')
+    assert.equal(init.method, 'POST')
+    assert.deepEqual(JSON.parse(init.body), { username: 'nuevo.paciente@prueba.local', password: 'PacienteTemporal2026!' })
+    return new Response(JSON.stringify({ id: 7, username: 'nuevo.paciente@prueba.local', rol: 'ROLE_PACIENTE' }), {
+      status: 201, headers: { 'Content-Type': 'application/json' },
+    })
+  }
+  await api.registerPatient('nuevo.paciente@prueba.local', 'PacienteTemporal2026!')
+  process.stdout.write('Demo: registro médico y paciente, roles, sesión y contrato HTTP de alta correctos; sin red real\n')
 } finally {
   await vite.close()
 }
