@@ -40,7 +40,7 @@ async function request<T>(path: string, init: RequestInit = {}, token?: string):
     const message = data && typeof data === 'object' && 'mensaje' in data && typeof data.mensaje === 'string'
       ? data.mensaje : response.status === 401 ? 'Credenciales inválidas o sesión vencida.'
         : response.status === 403 ? 'No tienes permiso para realizar esta acción.'
-          : response.status === 404 ? 'Esta función aún no está disponible en el backend.'
+          : response.status === 404 ? 'Esta función aún no está disponible.'
             : `No se pudo completar la solicitud (${response.status}).`
     throw new ApiError(response.status, message)
   }
@@ -81,6 +81,15 @@ export const api = {
     )
     if (!result.id || result.username !== username || result.estadoColegiatura !== 'PENDIENTE_VERIFICACION') {
       throw new ApiError(502, 'El backend aún no confirma registros persistidos. No se creó una cuenta verificable.')
+    }
+  },
+  async registerPatient(username: string, password: string) {
+    // El backend asigna ROLE_PACIENTE y devuelve el id persistido; nunca enviamos un rol desde el cliente.
+    const result = await request<{ id?: number; username?: string; rol?: string }>(
+      '/auth/register/paciente', { method: 'POST', body: json({ username, password }) },
+    )
+    if (!result.id || result.username !== username || result.rol !== 'ROLE_PACIENTE') {
+      throw new ApiError(502, 'No se pudo confirmar la creación de la cuenta.')
     }
   },
   getProfile: (token: string) => request<MedicalProfile>('/medicos/me/perfil', {}, token),

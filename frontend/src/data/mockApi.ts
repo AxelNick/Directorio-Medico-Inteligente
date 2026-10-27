@@ -7,7 +7,7 @@ const FIXED_USERS = {
   'admin.demo@prueba.local': { password: 'AdminDemo2026!', rol: 'ROLE_ADMIN' as Role },
   'paciente.demo@prueba.local': { password: 'PacienteDemo2026!', rol: 'ROLE_PACIENTE' as Role },
 }
-const registered = new Map<string, { password: string; colegiatura: string }>()
+const registered = new Map<string, { password: string; rol: Role; colegiatura?: string }>()
 
 interface DemoStore {
   specialties: Specialty[]
@@ -73,7 +73,7 @@ function userFromToken(token: string, expected: Role): string {
   const username = decodeURIComponent(token.slice(prefix.length))
   if (expected === 'ROLE_ADMIN' && username !== 'admin.demo@prueba.local') throw new ApiError(403, 'Acceso denegado.')
   if (expected === 'ROLE_MEDICO' && !store().profiles[username]) throw new ApiError(401, 'Sesión de prueba vencida.')
-  if (expected === 'ROLE_PACIENTE' && username !== 'paciente.demo@prueba.local') throw new ApiError(403, 'Acceso denegado.')
+  if (expected === 'ROLE_PACIENTE' && username !== 'paciente.demo@prueba.local' && registered.get(username)?.rol !== 'ROLE_PACIENTE') throw new ApiError(401, 'Sesión de prueba vencida.')
   return username
 }
 
@@ -90,7 +90,7 @@ export const mockApi = {
       try {
         const username = userFromToken(token, rol)
         const fixed = FIXED_USERS[username as keyof typeof FIXED_USERS]
-        if (fixed?.rol === rol || (rol === 'ROLE_MEDICO' && registered.has(username))) return { token, username, rol }
+        if (fixed?.rol === rol || registered.get(username)?.rol === rol) return { token, username, rol }
       } catch { break }
     }
     throw new ApiError(401, 'Sesión de prueba vencida.')
@@ -98,8 +98,9 @@ export const mockApi = {
   async login(username: string, password: string): Promise<Session> {
     await pause()
     const fixed = FIXED_USERS[username as keyof typeof FIXED_USERS]
+    const temporary = registered.get(username)
     const role = fixed?.password === password ? fixed.rol
-      : registered.get(username)?.password === password ? 'ROLE_MEDICO' : null
+      : temporary?.password === password ? temporary.rol : null
     if (!role) throw new ApiError(401, 'Credenciales de prueba inválidas.')
     return { token: `demo:${role}:${encodeURIComponent(username)}`, username, rol: role }
   },
@@ -110,11 +111,20 @@ export const mockApi = {
     if (username in FIXED_USERS || registered.has(username)) throw new ApiError(409, 'Ese usuario ya existe en los datos de prueba.')
     if (Object.values(s.profiles).some((item) => item.colegiatura.toLowerCase() === colegiatura.toLowerCase())) throw new ApiError(409, 'Esa colegiatura ya existe en los datos de prueba.')
     // La contraseña de una cuenta creada aquí solo vive en memoria; nunca se guarda en localStorage.
-    registered.set(username, { password, colegiatura })
+    registered.set(username, { password, colegiatura, rol: 'ROLE_MEDICO' })
     s.profiles[username] = { biografia: '', aniosExperiencia: null, fotoUrl: null, colegiatura, estadoColegiatura: 'PENDIENTE_VERIFICACION', especialidadIds: [] }
     s.centers[username] = []
     s.nextUserId += 1
     save()
+  },
+  async registerPatient(username: string, password: string) {
+    await pause()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(username) || username.length > 100 || password.length < 8 || password.length > 72) {
+      throw new ApiError(400, 'Indica un correo válido y una contraseña de 8 a 72 caracteres.')
+    }
+    if (username in FIXED_USERS || registered.has(username)) throw new ApiError(409, 'Ese usuario ya existe en los datos de prueba.')
+    // Las cuentas nuevas y sus contraseñas permanecen solo en memoria en el modo de prueba.
+    registered.set(username, { password, rol: 'ROLE_PACIENTE' })
   },
   async getProfile(token: string) { await pause(); return copy(profileFor(token)) },
   async updateProfile(token: string, value: Pick<MedicalProfile, 'biografia' | 'aniosExperiencia' | 'colegiatura' | 'especialidadIds'>) {

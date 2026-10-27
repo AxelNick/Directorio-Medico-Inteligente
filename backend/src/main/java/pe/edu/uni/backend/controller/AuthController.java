@@ -9,10 +9,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import pe.edu.uni.backend.dto.RegistroMedicoRequest;
 import pe.edu.uni.backend.dto.RegistroMedicoResponse;
+import pe.edu.uni.backend.dto.RegistroPacienteRequest;
+import pe.edu.uni.backend.dto.RegistroPacienteResponse;
 import pe.edu.uni.backend.entity.Usuario;
 import pe.edu.uni.backend.repository.UsuarioRepository;
 import pe.edu.uni.backend.security.JwtUtils;
 import pe.edu.uni.backend.service.MedicoService;
+import pe.edu.uni.backend.service.PacienteService;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -32,12 +35,23 @@ public class AuthController {
     private MedicoService medicoService;
 
     @Autowired
+    private PacienteService pacienteService;
+
+    @Autowired
     private UsuarioRepository usuarioRepository;
 
     /** US-MED-01/03: crea usuario + perfil medico con colegiatura PENDIENTE_VERIFICACION. */
     @PostMapping("/register")
     public ResponseEntity<RegistroMedicoResponse> register(@Valid @RequestBody RegistroMedicoRequest request) {
         RegistroMedicoResponse creado = medicoService.registrar(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+    }
+
+    /** Alta de paciente sin perfil clinico ni permisos de historial. */
+    @PostMapping("/register/paciente")
+    public ResponseEntity<RegistroPacienteResponse> registerPatient(
+            @Valid @RequestBody RegistroPacienteRequest request) {
+        RegistroPacienteResponse creado = pacienteService.registrar(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 
@@ -52,7 +66,7 @@ public class AuthController {
             
             if (usuarioOpt.isPresent()) {
                 Usuario u = usuarioOpt.get();
-                if (passwordEncoder.matches(password, u.getPassword())) {
+                if (Boolean.TRUE.equals(u.getHabilitado()) && passwordEncoder.matches(password, u.getPassword())) {
                     String rol = u.getRol().getNombre();
                     String token = jwtUtils.generarToken(u.getUsername(), rol);
                     Map<String, String> response = new HashMap<>();
@@ -60,16 +74,16 @@ public class AuthController {
                     return ResponseEntity.ok(response);
                 }
             }
-            
-            // Credenciales demo para desarrollo / fallback seguro
-            if ("admin@uni.edu.pe".equalsIgnoreCase(username) && "admin123".equals(password)) {
-                String token = jwtUtils.generarToken("admin@uni.edu.pe", "ROLE_ADMIN");
-                Map<String, String> response = new HashMap<>();
-                response.put("token", token);
-                return ResponseEntity.ok(response);
+
+            // Compatibilidad con la cuenta administrativa de desarrollo sembrada en V1.
+            // Solo funciona mientras esa cuenta exista, conserve ROLE_ADMIN y este habilitada.
+            if ("admin@uni.edu.pe".equals(normUser) && "admin123".equals(password)
+                    && usuarioOpt.filter(u -> Boolean.TRUE.equals(u.getHabilitado())
+                            && "ROLE_ADMIN".equals(u.getRol().getNombre())).isPresent()) {
+                return ResponseEntity.ok(Map.of("token", jwtUtils.generarToken(normUser, "ROLE_ADMIN")));
             }
         }
-        
+
         return ResponseEntity.status(401).body(Map.of("mensaje", "Credenciales invalidas"));
     }
 

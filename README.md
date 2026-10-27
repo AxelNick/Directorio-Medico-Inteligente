@@ -133,6 +133,7 @@ Para desarrollar con recarga en caliente, levanta solo la base de datos (`docker
 Para consultar el desglose detallado, asignación de Puntos de Historia y el plan de Sprints, revisa los documentos en la carpeta `/docs`:
 * `docs/wbs-taiga.md` — Estructura WBS y Backlog actualizado al nuevo alcance.
 * `docs/sprints-planning.md` — Cronograma de Sprints y Convención de Commits.
+* `docs/patrones-diseno.md` — Patrones implementados, ubicaciones en el código y guía breve para exponerlos.
 
 
 ## Licencia y Créditos

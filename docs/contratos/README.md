@@ -4,7 +4,8 @@ Esta carpeta es la **ubicación compartida** de los contratos propuestos para la
 
 | Contrato | Historia | Estado |
 | --- | --- | --- |
-| [Auditoría v1](auditoria-v1.md) | US-ADM-04, Sprint 1 | Propuesto para revisión de backend; no implementado. |
-| [Integración Sprint 2 v1](sprint2-v1.md) | US-MED-01 a 05, US-ADM-01 y US-ADM-03 | Implementado en backend: `POST /auth/register`, `GET/PUT /medicos/me/perfil`, `PUT /medicos/me/foto` y CRUD `/medicos/me/centros` (US-MED-02 a 05). Pendientes: `GET /auth/me`, login real y catálogo `/especialidades` (US-MED-01, US-ADM-01, US-ADM-03). |
+| [Auditoría v1](auditoria-v1.md) | US-ADM-04, Sprint 1 | El backend contiene AOP, persistencia y consulta; integración completa aún no verificada. |
+| [Integración Sprint 2 v1](sprint2-v1.md) | US-MED-01 a 05, US-ADM-01 y US-ADM-03 | El código backend incluye registro médico, login, `/auth/me`, perfil, centros y catálogo; integración completa aún no verificada. |
+| [Registro de paciente v1](registro-paciente-v1.md) | Nueva historia por incorporar al WBS/Taiga | Frontend y backend implementados; flujo HTTP probado contra PostgreSQL local. |
 
-Las tareas pendientes de auditoría están en [Sprint 1 backend](../SPRINT_1_BACKEND.md). El frontend refleja ese contrato en [su tipo TypeScript](../../frontend/src/data/audit.ts); `/demo/auditoria` usa datos ficticios solo en desarrollo. [Sprint 2](sprint2-v1.md) documenta además las **cuentas de prueba locales** de médico, administrador y paciente, y el cambio al cliente HTTP. La pantalla de paciente es una demostración local; su registro y funciones clínicas reales pertenecen a etapas posteriores. Las cuentas de prueba no son credenciales del backend.
+Las tareas pendientes de auditoría están en [Sprint 1 backend](SPRINT_1_BACKEND.md). El frontend refleja ese contrato en [su tipo TypeScript](../../frontend/src/data/audit.ts); `/demo/auditoria` usa datos ficticios solo en desarrollo. [Sprint 2](sprint2-v1.md) documenta además las **cuentas de prueba locales** de médico, administrador y paciente, y el cambio al cliente HTTP. La persistencia del [registro de paciente](registro-paciente-v1.md) se verificó en PostgreSQL local. Las cuentas de prueba no son credenciales del backend.
