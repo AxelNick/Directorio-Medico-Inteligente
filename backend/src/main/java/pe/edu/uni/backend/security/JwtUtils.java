@@ -4,17 +4,25 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Component
 public class JwtUtils {
 
-    // Llave secreta para firmar el token (en un entorno real debe ir en application.properties)
-    private final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    private final Key key;
     private final int jwtExpirationMs = 86400000; // 24 horas
+
+    public JwtUtils(@Value("${app.jwt.secret:}") String secret) {
+        // En desarrollo sin configuración se conserva la clave efímera anterior.
+        // El perfil prod exige JWT_SECRET y mantiene las sesiones tras reinicios.
+        this.key = secret.isBlank() ? Keys.secretKeyFor(SignatureAlgorithm.HS256)
+                : Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
 
     public String generarToken(String username, String rol) {
         return Jwts.builder()

@@ -70,6 +70,8 @@ sistema-citas-medicas/
 
 ## Ejecución rápida con Docker (todo en contenedores)
 
+Para desplegar PostgreSQL, backend y frontend en servicios separados, sigue [DEPLOYMENT.md](DEPLOYMENT.md).
+
 Solo necesitas Docker y Docker Compose. Desde la raíz del repositorio:
 
 ```bash

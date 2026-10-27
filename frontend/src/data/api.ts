@@ -24,6 +24,12 @@ export class ApiError extends Error {
 
 const base = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/$/, '')
 
+export function backendAssetUrl(path: string): string {
+  // En Compose /uploads pasa por nginx; con Render separado apunta al origen de la API.
+  return path.startsWith('/uploads/') && /^https?:\/\//.test(base)
+    ? new URL(path, base).toString() : path
+}
+
 async function request<T>(path: string, init: RequestInit = {}, token?: string): Promise<T> {
   const headers = new Headers(init.headers)
   if (init.body && !(init.body instanceof FormData)) headers.set('Content-Type', 'application/json')

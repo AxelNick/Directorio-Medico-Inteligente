@@ -2,6 +2,7 @@ package pe.edu.uni.backend.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -40,6 +41,9 @@ public class AuthController {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    @Value("${app.demo-admin-login.enabled:true}")
+    private boolean demoAdminLoginEnabled;
+
     /** US-MED-01/03: crea usuario + perfil medico con colegiatura PENDIENTE_VERIFICACION. */
     @PostMapping("/register")
     public ResponseEntity<RegistroMedicoResponse> register(@Valid @RequestBody RegistroMedicoRequest request) {
@@ -64,7 +68,8 @@ public class AuthController {
             String normUser = username.trim().toLowerCase();
             Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(normUser);
             
-            if (usuarioOpt.isPresent()) {
+            // La cuenta sembrada en V1 nunca puede autenticarse en producción.
+            if (usuarioOpt.isPresent() && (demoAdminLoginEnabled || !"admin@uni.edu.pe".equals(normUser))) {
                 Usuario u = usuarioOpt.get();
                 if (Boolean.TRUE.equals(u.getHabilitado()) && passwordEncoder.matches(password, u.getPassword())) {
                     String rol = u.getRol().getNombre();
@@ -77,7 +82,7 @@ public class AuthController {
 
             // Compatibilidad con la cuenta administrativa de desarrollo sembrada en V1.
             // Solo funciona mientras esa cuenta exista, conserve ROLE_ADMIN y este habilitada.
-            if ("admin@uni.edu.pe".equals(normUser) && "admin123".equals(password)
+            if (demoAdminLoginEnabled && "admin@uni.edu.pe".equals(normUser) && "admin123".equals(password)
                     && usuarioOpt.filter(u -> Boolean.TRUE.equals(u.getHabilitado())
                             && "ROLE_ADMIN".equals(u.getRol().getNombre())).isPresent()) {
                 return ResponseEntity.ok(Map.of("token", jwtUtils.generarToken(normUser, "ROLE_ADMIN")));
