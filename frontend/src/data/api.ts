@@ -65,7 +65,9 @@ export const api = {
     return { token, username: identity.username, rol: identity.rol as Role }
   },
   async login(username: string, password: string): Promise<Session> {
-    const result = await request<{ token?: string }>('/auth/login', { method: 'POST', body: json({ username, password }) })
+    // El backend busca y devuelve el usuario normalizado en minúsculas.
+    const normalizedUsername = username.trim().toLowerCase()
+    const result = await request<{ token?: string }>('/auth/login', { method: 'POST', body: json({ username: normalizedUsername, password }) })
     if (!result.token) throw new ApiError(502, 'El backend no entregó una sesión válida.')
     // Un JWT del prototipo no basta: /auth/me debe confirmar usuario y rol desde el servidor.
     let identity: Session
@@ -76,7 +78,7 @@ export const api = {
       }
       throw cause
     }
-    if (identity.username !== username) {
+    if (identity.username !== normalizedUsername) {
       throw new ApiError(502, 'El backend no confirmó la identidad de esta sesión.')
     }
     return identity

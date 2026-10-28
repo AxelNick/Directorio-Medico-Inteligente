@@ -25,3 +25,8 @@ replay_pid*
 
 # Seguimiento local no versionado
 /docs-local/
+
+# Variables locales: nunca versionar secretos ni configuraciones de despliegue.
+.env
+.env.*
+!.env.example

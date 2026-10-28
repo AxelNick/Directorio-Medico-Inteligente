@@ -2,6 +2,8 @@
 
 Este repositorio publica **PostgreSQL en Supabase**, **Spring Boot en Render Free** y **la SPA en Vercel**. El navegador llama directamente a Render; no necesita claves de Supabase. La configuración de Docker Compose sigue siendo para desarrollo local.
 
+Los archivos locales `backend/.env`, `frontend/.env.local` y `frontend/.env.production.local` están ignorados por Git. Los ejemplos sin secretos son `backend/.env.example` y `frontend/.env.example`. Vercel toma `VITE_API_BASE_URL` del Dashboard al compilar; **no recibe** los `.env` locales ignorados. Spring Boot tampoco carga `backend/.env` automáticamente: para una prueba local con Docker se pasa explícitamente con `--env-file backend/.env`. Si ese archivo apunta a Supabase, el arranque puede ejecutar migraciones allí.
+
 ## 1. Supabase: base de datos
 
 1. Crea un proyecto PostgreSQL. En **Connect**, copia el host, usuario y puerto de **Session pooler**. Usa el puerto **5432**, no el de Transaction pooler (6543), para el backend JDBC y Flyway. El pooler de sesión permite conectarse desde redes IPv4.
