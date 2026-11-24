@@ -9,8 +9,11 @@ export function PatientPage() {
     <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
       <section className="rounded-[24px] border border-[#dce9e9] bg-white p-6 shadow-sm sm:p-9">
         <h2 className="text-xl font-bold text-[#173454]">Bienvenido a tu espacio</h2>
-        <p className="mt-3 text-sm leading-7 text-[#607785]">Sesión activa de {session?.username}. Desde aquí podrás volver al inicio y explorar las especialidades presentadas.</p>
-        <Link className={`mt-6 inline-flex ${secondaryClass}`} to="/#especialidades">Ver especialidades</Link>
+        <p className="mt-3 text-sm leading-7 text-[#607785]">Sesión activa de {session?.username}. Busca médicos verificados, consulta al asistente de orientación y deja tu opinión en la ficha de quien te atendió.</p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link className={`inline-flex ${secondaryClass}`} to="/directorio">Buscar en el directorio</Link>
+          <Link className={`inline-flex ${secondaryClass}`} to="/asistente">Hablar con el asistente</Link>
+        </div>
       </section>
       <section className="rounded-[24px] border border-[#dce9e9] bg-white p-6 shadow-sm sm:p-9">
         <h2 className="text-xl font-bold text-[#173454]">Mi historia clínica</h2>

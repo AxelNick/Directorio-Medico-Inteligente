@@ -1,3 +1,5 @@
+import type { AuditPage } from './audit'
+
 export type Role = 'ROLE_MEDICO' | 'ROLE_ADMIN' | 'ROLE_PACIENTE'
 
 export interface Session {
@@ -18,11 +20,88 @@ export interface MedicalProfile {
 export interface Specialty { id: number; nombre: string; habilitada: boolean }
 export interface CareCenter { id: number; nombre: string; direccion: string; ciudad: string }
 
+/** Respuesta paginada común (misma forma que la auditoría): items, page desde 0, size y total de resultados. */
+export interface PageResponse<T> { items: T[]; page: number; size: number; total: number }
+
+export interface SpecialtyRef { id: number; nombre: string }
+
+/**
+ * Sprint 3 — tarjeta del directorio público (GET /api/v1/directorio/medicos).
+ * Solo se devuelven perfiles aprobados con colegiatura verificada; nunca correo ni datos de la cuenta.
+ * `promedioCalificacion` y `totalResenas` los entrega el backend (Sprint 5); si faltan, la tarjeta no muestra estrellas.
+ */
+export interface DoctorSummary {
+  id: number
+  nombres: string
+  apellidos: string
+  fotoUrl: string | null
+  colegiatura: string
+  estadoColegiatura: 'VERIFICADA'
+  especialidades: SpecialtyRef[]
+  ciudades: string[]
+  promedioCalificacion?: number | null
+  totalResenas?: number
+}
+
+/** Sprint 3 — ficha pública (GET /api/v1/directorio/medicos/{medicoId}). Sin datos privados ni acciones de edición. */
+export interface DoctorDetail extends DoctorSummary {
+  biografia: string
+  aniosExperiencia: number | null
+  centros: CareCenter[]
+}
+
+/** Los filtros se serializan como query params; el backend ejecuta la búsqueda y calcula el promedio. */
+export interface DoctorSearchFilters {
+  nombre?: string
+  especialidadId?: number
+  ciudad?: string
+  colegiatura?: string
+  /** Sprint 5: umbral mínimo de promedio (por ejemplo 4). */
+  calificacionMinima?: number
+  /** Índice desde 0. */
+  page?: number
+  size?: number
+  sort?: string
+}
+
+/** Sprint 4 — POST /api/v1/triages. */
+export interface TriageRequest { mensaje: string }
+export interface TriageResponse {
+  emergencia: boolean
+  fallback: boolean
+  especialidad: SpecialtyRef | null
+  orientacion: string | null
+}
+
+/** Sprint 5 — reseñas visibles de un médico. */
+export interface Review { id: number; puntuacion: number; comentario: string | null; fechaCreacion: string }
+export interface ReviewInput { puntuacion: number; comentario: string }
+export interface ReviewPage extends PageResponse<Review> { promedio: number | null }
+
 export class ApiError extends Error {
   constructor(public status: number, message: string) { super(message) }
 }
 
 const base = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/$/, '')
+
+/**
+ * Prefijo REST de las APIs nuevas. Se concatena a `base`: con proxy de Vite/nginx la ruta del navegador es
+ * /api/api/v1/... (el primer /api lo elimina el proxy) y con VITE_API_BASE_URL es <host>/api/v1/...
+ */
+export const API_V1 = '/api/v1'
+/** Ruta real de auditoría en el backend actual (docs/contratos/auditoria-v1.md). */
+export const ADMIN_AUDIT_PATH = '/admin/auditoria'
+
+function query(params: Record<string, string | number | null | undefined>): string {
+  const search = new URLSearchParams()
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null) continue
+    const text = String(value).trim()
+    if (text !== '') search.set(key, text)
+  }
+  const result = search.toString()
+  return result ? `?${result}` : ''
+}
 
 export function backendAssetUrl(path: string): string {
   // En Compose /uploads pasa por nginx; con Render separado apunta al origen de la API.
@@ -44,10 +123,13 @@ async function request<T>(path: string, init: RequestInit = {}, token?: string):
     const contentType = response.headers.get('content-type') ?? ''
     const data: unknown = contentType.includes('application/json') ? await response.json().catch(() => null) : null
     const message = data && typeof data === 'object' && 'mensaje' in data && typeof data.mensaje === 'string'
-      ? data.mensaje : response.status === 401 ? 'Credenciales inválidas o sesión vencida.'
-        : response.status === 403 ? 'No tienes permiso para realizar esta acción.'
-          : response.status === 404 ? 'Esta función aún no está disponible.'
-            : `No se pudo completar la solicitud (${response.status}).`
+      ? data.mensaje : response.status === 400 ? 'Revisa los datos enviados e inténtalo de nuevo.'
+        : response.status === 401 ? 'Credenciales inválidas o sesión vencida.'
+          : response.status === 403 ? 'No tienes permiso para realizar esta acción.'
+            : response.status === 404 ? 'Esta función aún no está disponible.'
+              : response.status === 409 ? 'La solicitud entra en conflicto con un dato ya registrado.'
+                : response.status === 429 || response.status >= 500 ? 'El servicio no está disponible en este momento. Inténtalo más tarde.'
+                  : `No se pudo completar la solicitud (${response.status}).`
     throw new ApiError(response.status, message)
   }
   if (response.status === 204) return undefined as T
@@ -108,7 +190,8 @@ export const api = {
     body.append('foto', file)
     return request<MedicalProfile>('/medicos/me/foto', { method: 'PUT', body }, token)
   },
-  listSpecialties: (token: string) => request<Specialty[]>('/especialidades', {}, token),
+  // GET /especialidades es público (permitAll): el token es opcional y el directorio lo usa sin sesión.
+  listSpecialties: (token?: string) => request<Specialty[]>('/especialidades', {}, token),
   listAdminSpecialties: (token: string) => request<Specialty[]>('/admin/especialidades', {}, token),
   createSpecialty: (token: string, nombre: string) => request<Specialty>('/admin/especialidades', { method: 'POST', body: json({ nombre }) }, token),
   updateSpecialty: (token: string, id: number, value: Pick<Specialty, 'nombre' | 'habilitada'>) =>
@@ -119,4 +202,37 @@ export const api = {
   updateCenter: (token: string, id: number, value: Omit<CareCenter, 'id'>) =>
     request<CareCenter>(`/medicos/me/centros/${id}`, { method: 'PUT', body: json(value) }, token),
   deleteCenter: (token: string, id: number) => request<void>(`/medicos/me/centros/${id}`, { method: 'DELETE' }, token),
+
+  /**
+   * Sprint 1/2 — auditoría (solo ROLE_ADMIN). Respeta la paginación del backend (page desde 0) y acota size.
+   * Los errores 401, 403 y de red llegan como ApiError con mensaje legible; una respuesta mal formada se rechaza.
+   */
+  async listAdminAudit(token: string, page = 0, size = 20): Promise<AuditPage> {
+    const result = await request<AuditPage>(`${ADMIN_AUDIT_PATH}${query({
+      page: Math.max(0, Math.trunc(page)), size: Math.min(100, Math.max(1, Math.trunc(size))),
+    })}`, {}, token)
+    if (!result || !Array.isArray(result.items) || typeof result.total !== 'number') {
+      throw new ApiError(502, 'El backend devolvió una respuesta de auditoría inesperada.')
+    }
+    return result
+  },
+
+  // Sprint 3 — directorio público. Sin token: son GET cacheables y no dependen de la sesión.
+  searchDoctors: (filters: DoctorSearchFilters = {}) => request<PageResponse<DoctorSummary>>(
+    `${API_V1}/directorio/medicos${query({
+      nombre: filters.nombre, especialidadId: filters.especialidadId, ciudad: filters.ciudad,
+      colegiatura: filters.colegiatura, calificacionMinima: filters.calificacionMinima,
+      page: filters.page, size: filters.size, sort: filters.sort,
+    })}`),
+  getDoctorDetail: (id: number) => request<DoctorDetail>(`${API_V1}/directorio/medicos/${id}`),
+
+  // Sprint 4 — triage. El contrato actual no exige sesión; `token` queda opcional por si el backend lo requiere.
+  triage: (mensaje: string, token?: string) => request<TriageResponse>(
+    `${API_V1}/triages`, { method: 'POST', body: json({ mensaje } satisfies TriageRequest) }, token),
+
+  // Sprint 5 — reseñas. Crear exige ROLE_PACIENTE; listar es público.
+  createReview: (token: string, medicoId: number, value: ReviewInput) =>
+    request<Review>(`${API_V1}/medicos/${medicoId}/resenas`, { method: 'POST', body: json(value) }, token),
+  listReviews: (medicoId: number, page = 0, size = 5) =>
+    request<ReviewPage>(`${API_V1}/medicos/${medicoId}/resenas${query({ page, size })}`),
 }

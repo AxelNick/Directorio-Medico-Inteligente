@@ -7,5 +7,6 @@ Esta carpeta es la **ubicación compartida** de los contratos propuestos para la
 | [Auditoría v1](auditoria-v1.md) | US-ADM-04, Sprint 1 | El backend contiene AOP, persistencia y consulta; integración completa aún no verificada. |
 | [Integración Sprint 2 v1](sprint2-v1.md) | US-MED-01 a 05, US-ADM-01 y US-ADM-03 | El código backend incluye registro médico, login, `/auth/me`, perfil, centros y catálogo; integración completa aún no verificada. |
 | [Registro de paciente v1](registro-paciente-v1.md) | Nueva historia por incorporar al WBS/Taiga | Frontend y backend implementados; flujo HTTP probado contra PostgreSQL local. |
+| [Cliente del paciente v1](cliente-paciente-v1.md) | US-PAC-01 a 07 (Sprints 3 a 5) | Propuesta del frontend; cliente y pantallas implementados contra el adaptador de demostración. Backend por confirmar. |
 
 Las tareas pendientes de auditoría están en [Sprint 1 backend](SPRINT_1_BACKEND.md). El frontend refleja ese contrato en [su tipo TypeScript](../../frontend/src/data/audit.ts); `/demo/auditoria` usa datos ficticios solo en desarrollo. [Sprint 2](sprint2-v1.md) documenta además las **cuentas de prueba locales** de médico, administrador y paciente, y el cambio al cliente HTTP. La persistencia del [registro de paciente](registro-paciente-v1.md) se verificó en PostgreSQL local. Las cuentas de prueba no son credenciales del backend.

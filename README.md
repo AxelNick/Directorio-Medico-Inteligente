@@ -128,6 +128,15 @@ Para desarrollar con recarga en caliente, levanta solo la base de datos (`docker
    ```
    * La aplicación estará disponible en: http://localhost:5173
 
+   **Modo demostración vs. API real (solo desarrollo):**
+
+   | Comando (en `frontend/`) | Datos | Indicador en pantalla |
+   | :--- | :--- | :--- |
+   | `npm run dev` | Ficticios, sin llamar al backend | «Entorno de prueba» |
+   | `npm run dev:api` | Backend real (proxy `/api` → `http://127.0.0.1:8080`, o `VITE_DEV_API_TARGET`) | «API real · desarrollo» |
+
+   Para validar login, perfil y centros de atención de forma real, levanta la base y el backend (pasos 3 y 4) y usa `npm run dev:api`; las cuentas ficticias de la demostración no existen en el backend. La compilación de producción siempre usa la API real. Variables en `frontend/.env.example`.
+
 
 ## Planificación y Gestión en Taiga
 * **URL de Taiga:** [http://159.195.245.124:8085/project/sistema-citas-medicas/](http://159.195.245.124:8085/project/sistema-citas-medicas/)
