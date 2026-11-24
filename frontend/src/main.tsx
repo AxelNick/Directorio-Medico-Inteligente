@@ -6,6 +6,9 @@ import { AuthPage } from './pages/AuthPage'
 import { DoctorPage } from './pages/DoctorPage'
 import { AdminPage } from './pages/AdminPage'
 import { PatientPage } from './pages/PatientPage'
+import { DirectoryPage } from './pages/DirectoryPage'
+import { DoctorDetailPage } from './pages/DoctorDetailPage'
+import { AsistentePage } from './pages/AsistentePage'
 import { SessionProvider, useSession } from './session/SessionContext'
 import { rolePath } from './session/roles'
 import type { Role } from './data/api'
@@ -23,6 +26,9 @@ if (import.meta.env.DEV && window.location.pathname === '/demo/auditoria') {
     <Route path="/ingresar" element={<AuthPage key="login" mode="login" />} />
     <Route path="/registro/medico" element={<AuthPage key="registerDoctor" mode="registerDoctor" />} />
     <Route path="/registro/paciente" element={<AuthPage key="registerPatient" mode="registerPatient" />} />
+    <Route path="/directorio" element={<DirectoryPage />} />
+    <Route path="/directorio/medico/:id" element={<DoctorDetailPage />} />
+    <Route path="/asistente" element={<AsistentePage />} />
     <Route path="/medico" element={<Protected role="ROLE_MEDICO"><DoctorPage /></Protected>} />
     <Route path="/admin" element={<Protected role="ROLE_ADMIN"><AdminPage /></Protected>} />
     <Route path="/paciente" element={<Protected role="ROLE_PACIENTE"><PatientPage /></Protected>} />

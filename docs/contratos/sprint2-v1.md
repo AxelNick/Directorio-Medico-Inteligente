@@ -14,7 +14,7 @@ Estas credenciales son **públicas, inventadas y solo para el adaptador local de
 
 Con `npm run dev`, el frontend usa el adaptador ficticio de forma predeterminada: login, registros temporales de médico y paciente, perfil, foto, centros y catálogo funcionan sin llamar a Spring Boot. La cuenta de paciente abre `/paciente`, una pantalla sin citas ni historia inventada; su alta real se describe en el [contrato de paciente](registro-paciente-v1.md). Los registros temporales y sus contraseñas viven solo en memoria hasta recargar; los cambios de las cuentas fijas se guardan en `localStorage` bajo `directorio-medico-sprint2-demo-v1`. No introducir datos personales reales en este modo. El distintivo **Entorno de prueba** identifica estas pantallas. La compilación de producción excluye credenciales y datos ficticios.
 
-Para probar el contrato HTTP desde PowerShell en `frontend/`: `$env:VITE_DATA_SOURCE = 'api'; npm run dev`. El proxy Vite envía `/api/*` a `http://127.0.0.1:8080/*`. Al terminar: `Remove-Item Env:VITE_DATA_SOURCE`. En modo HTTP el frontend exige `GET /auth/me` antes de abrir un área privada.
+Para probar el contrato HTTP contra el backend real, en `frontend/` ejecuta `npm run dev:api` (Windows, macOS y Linux; ejecuta `vite --mode api`). El proxy Vite envía `/api/*` a `http://127.0.0.1:8080/*` (o a `VITE_DEV_API_TARGET`). La cabecera muestra **«API real · desarrollo»**; en `npm run dev` muestra **«Entorno de prueba»**. Alternativa manual en PowerShell: `$env:VITE_DATA_SOURCE = 'api'; npm run dev` y, al terminar, `Remove-Item Env:VITE_DATA_SOURCE`. En modo HTTP el frontend exige `GET /auth/me` antes de abrir un área privada.
 
 ## Acceso y sesión
 

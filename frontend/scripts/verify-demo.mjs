@@ -72,7 +72,76 @@ try {
     })
   }
   await api.registerPatient('nuevo.paciente@prueba.local', 'PacienteTemporal2026!')
-  process.stdout.write('Demo: registro médico y paciente, roles, sesión y contrato HTTP de alta correctos; sin red real\n')
+  // ---- Sprints 3 a 5 en el adaptador de demostración: directorio, triage, reseñas y auditoría ----
+  const firstPage = await mockApi.searchDoctors({ page: 0, size: 5 })
+  assert.equal(firstPage.items.length, 5)
+  assert.equal(firstPage.total, 12)
+  assert.ok((await mockApi.searchDoctors({ especialidadId: 2, size: 50 })).items.every((item) => item.especialidades.some((entry) => entry.id === 2)))
+  assert.equal((await mockApi.searchDoctors({ nombre: 'ana maria' })).total, 1, 'la búsqueda por nombre ignora tildes y mayúsculas')
+  assert.deepEqual((await mockApi.searchDoctors({ calificacionMinima: 4, size: 50 })).items.map((item) => item.id).sort(), [101, 102, 104])
+  await assert.rejects(mockApi.getDoctorDetail(999), { status: 404 })
+  const detail = await mockApi.getDoctorDetail(105)
+  assert.equal(detail.estadoColegiatura, 'VERIFICADA')
+  assert.ok(!JSON.stringify(detail).includes('@'), 'la ficha pública no expone correos')
+
+  await assert.rejects(mockApi.createReview(doctor.token, 105, { puntuacion: 5, comentario: '' }), { status: 403 })
+  await assert.rejects(mockApi.createReview(patient.token, 105, { puntuacion: 6, comentario: '' }), { status: 400 })
+  const review = await mockApi.createReview(patient.token, 105, { puntuacion: 4, comentario: ' Muy atento ' })
+  assert.equal(review.comentario, 'Muy atento')
+  await assert.rejects(mockApi.createReview(patient.token, 105, { puntuacion: 5, comentario: '' }), { status: 409 })
+  const reviews = await mockApi.listReviews(105)
+  assert.equal(reviews.total, 1)
+  assert.equal(reviews.promedio, 4)
+  assert.ok(!('paciente' in reviews.items[0]), 'las reseñas no exponen datos del paciente')
+  assert.ok((await mockApi.searchDoctors({ calificacionMinima: 4, size: 50 })).items.some((item) => item.id === 105))
+
+  assert.equal((await mockApi.triage('Tengo dolor de pecho fuerte')).emergencia, true)
+  assert.equal((await mockApi.triage('mensaje para simular caída')).fallback, true)
+  assert.equal((await mockApi.triage('palpitaciones y presión alta')).especialidad?.id, 2)
+  await assert.rejects(mockApi.triage('   '), { status: 400 })
+  await assert.rejects(mockApi.listAdminAudit(doctor.token), { status: 403 })
+  const auditPage = await mockApi.listAdminAudit(admin.token, 1, 5)
+  assert.equal(auditPage.page, 1)
+  assert.equal(auditPage.items.length, 5)
+
+  // ---- Contrato HTTP del cliente compartido (sin red real) ----
+  const calls = []
+  let respond = (url, init) => {
+    const target = String(url)
+    const created = init.method === 'POST' && !target.includes('/triages')
+    const value = target.includes('/admin/auditoria') ? { items: [], page: 0, size: 5, total: 0 }
+      : target.includes('/triages') ? { emergencia: false, fallback: false, especialidad: null, orientacion: null }
+        : created ? { id: 1, puntuacion: 5, comentario: null, fechaCreacion: '2026-11-24T10:00:00Z' }
+          : target.includes('/resenas') ? { items: [], page: 0, size: 5, total: 0, promedio: null }
+            : { items: [], page: 0, size: 9, total: 0 }
+    return new Response(JSON.stringify(value), { status: created ? 201 : 200, headers: { 'Content-Type': 'application/json' } })
+  }
+  globalThis.fetch = async (url, init = {}) => {
+    calls.push({ url: String(url), method: init.method ?? 'GET', auth: new Headers(init.headers).get('Authorization'), body: init.body })
+    return respond(url, init)
+  }
+  await api.searchDoctors({ nombre: ' Ana ', especialidadId: 2, ciudad: '', calificacionMinima: 4, page: 1, size: 9 })
+  assert.deepEqual(calls.at(-1), { url: '/api/api/v1/directorio/medicos?nombre=Ana&especialidadId=2&calificacionMinima=4&page=1&size=9', method: 'GET', auth: null, body: undefined })
+  await api.getDoctorDetail(15)
+  assert.equal(calls.at(-1).url, '/api/api/v1/directorio/medicos/15')
+  await api.triage('dolor de cabeza')
+  assert.deepEqual(calls.at(-1), { url: '/api/api/v1/triages', method: 'POST', auth: null, body: '{"mensaje":"dolor de cabeza"}' })
+  await api.createReview('tok', 15, { puntuacion: 5, comentario: 'Bien' })
+  assert.deepEqual(calls.at(-1), { url: '/api/api/v1/medicos/15/resenas', method: 'POST', auth: 'Bearer tok', body: '{"puntuacion":5,"comentario":"Bien"}' })
+  await api.listReviews(15, 0, 5)
+  assert.deepEqual(calls.at(-1), { url: '/api/api/v1/medicos/15/resenas?page=0&size=5', method: 'GET', auth: null, body: undefined })
+  await api.listAdminAudit('tok', 0, 500)
+  assert.deepEqual(calls.at(-1), { url: '/api/admin/auditoria?page=0&size=100', method: 'GET', auth: 'Bearer tok', body: undefined })
+  respond = () => new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } })
+  await assert.rejects(api.listAdminAudit('tok'), { status: 502 })
+  respond = () => new Response(JSON.stringify({}), { status: 403, headers: { 'Content-Type': 'application/json' } })
+  await assert.rejects(api.listAdminAudit('tok'), { status: 403 })
+  respond = () => new Response(JSON.stringify({ mensaje: 'Ya calificaste a este médico.' }), { status: 409, headers: { 'Content-Type': 'application/json' } })
+  await assert.rejects(api.createReview('tok', 15, { puntuacion: 5, comentario: '' }), { status: 409, message: 'Ya calificaste a este médico.' })
+  globalThis.fetch = () => { throw new TypeError('sin red') }
+  await assert.rejects(api.listAdminAudit('tok'), { status: 0 })
+
+  process.stdout.write('Demo: registro, roles, sesión, directorio, triage, reseñas, auditoría y contratos HTTP correctos; sin red real\n')
 } finally {
   await vite.close()
 }

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "vite --mode api",
     "build": "tsc --noEmit && vite build",
     "lint": "eslint .",
     "test:demo": "node scripts/verify-demo.mjs",

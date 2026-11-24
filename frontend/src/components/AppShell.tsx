@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { Brand } from './SiteHeader'
 import { useSession } from '../session/SessionContext'
-import { isDemoMode } from '../data/service'
+import { isDemoMode, isDevApiMode } from '../data/service'
 
 export function AppShell({ title, eyebrow, children }: { title: string; eyebrow: string; children: React.ReactNode }) {
   const { session, logout } = useSession()
@@ -11,9 +11,12 @@ export function AppShell({ title, eyebrow, children }: { title: string; eyebrow:
     <header className="border-b border-[#dce9e9] bg-white">
       <div className="mx-auto flex max-w-[1180px] flex-wrap items-center justify-between gap-4 px-5 py-4 lg:px-8">
         <Brand />
-        <nav className="flex flex-wrap items-center gap-4 text-sm font-semibold" aria-label="Área privada">
+        <nav className="flex flex-wrap items-center gap-4 text-sm font-semibold" aria-label="Navegación principal">
           <Link to="/" className="text-[#0F8B8D] underline underline-offset-4">Inicio</Link>
+          <Link to="/directorio" className="text-[#0F8B8D] underline underline-offset-4">Directorio</Link>
+          <Link to="/asistente" className="text-[#0F8B8D] underline underline-offset-4">Asistente</Link>
           {isDemoMode && <span className="rounded-full bg-[#eaf7f6] px-3 py-1.5 text-xs font-bold text-[#087c7d]">Entorno de prueba</span>}
+          {isDevApiMode && <span className="rounded-full bg-[#fff4dd] px-3 py-1.5 text-xs font-bold text-[#8a5a00]">API real · desarrollo</span>}
           {session && <span className="max-w-48 truncate text-[#58717f]" title={session.username}>{session.username}</span>}
           {session && <button type="button" className="rounded-full border border-[#c9ddde] px-4 py-2 text-[#1E3A5F] hover:bg-[#eaf7f6]" onClick={() => { logout(); navigate('/') }}>Salir</button>}
         </nav>

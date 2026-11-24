@@ -1,4 +1,9 @@
-import { ApiError, type CareCenter, type MedicalProfile, type Role, type Session, type Specialty } from './api'
+import {
+  ApiError, type CareCenter, type DoctorDetail, type DoctorSearchFilters, type DoctorSummary, type MedicalProfile,
+  type PageResponse, type Review, type ReviewInput, type ReviewPage, type Role, type Session, type Specialty,
+  type TriageResponse,
+} from './api'
+import { createMockAuditRepository } from '../demo/mockAuditRepository'
 
 // Todos los valores de este archivo son ficticios y se cargan únicamente en desarrollo.
 const STORAGE_KEY = 'directorio-medico-sprint2-demo-v1'
@@ -81,6 +86,54 @@ function profileFor(token: string) {
   return store().profiles[userFromToken(token, 'ROLE_MEDICO')]
 }
 
+// ---- Directorio, triage y reseñas (Sprints 3 a 5): médicos y opiniones inventados, solo en memoria. ----
+interface DemoDoctor { id: number; nombres: string; apellidos: string; colegiatura: string; especialidadIds: number[]; biografia: string; aniosExperiencia: number; centros: CareCenter[] }
+interface DemoReview extends Review { medicoId: number; paciente: string }
+
+const DEMO_NAMES = ['Ana María', 'Luis Fernando', 'Carla', 'Jorge', 'Rosa', 'Miguel', 'Lucía', 'Pedro', 'Elena', 'Diego', 'Marta', 'Raúl']
+const DEMO_SURNAMES = ['Demo Quispe', 'Prueba Rojas', 'Ficticia Mendoza', 'Simulado Paredes', 'Ejemplo Valdivia', 'Muestra Salazar', 'Modelo Cárdenas', 'Piloto Huamán', 'Ficticio Torres', 'Demo Vargas', 'Prueba Ccori', 'Ejemplo Rivas']
+const DEMO_CITIES = ['Lima', 'Arequipa', 'Cusco', 'Lima', 'Trujillo', 'Lima']
+const DEMO_DOCTORS: DemoDoctor[] = DEMO_NAMES.map((nombres, index) => ({
+  id: 101 + index, nombres, apellidos: DEMO_SURNAMES[index], colegiatura: `CMP-DEMO-${101 + index}`,
+  especialidadIds: index % 4 === 3 ? [2, 1] : [(index % 3) + 1],
+  biografia: 'Perfil ficticio para revisar la ficha pública. Ninguna persona real corresponde a estos datos.',
+  aniosExperiencia: 3 + ((index * 7) % 20),
+  centros: [{ id: 200 + index, nombre: `Centro de prueba ${index + 1}`, direccion: `Av. Ejemplo ${100 + index * 10}`, ciudad: DEMO_CITIES[index % DEMO_CITIES.length] }],
+}))
+
+const seedReview = (medicoId: number, puntuacion: number, day: number): DemoReview => ({
+  id: medicoId * 100 + day, medicoId, paciente: `semilla-${medicoId}-${day}`, puntuacion,
+  comentario: 'Comentario ficticio de ejemplo.', fechaCreacion: new Date(Date.UTC(2026, 10, day, 15, 0)).toISOString(),
+})
+// Las reseñas creadas en la demo viven solo en memoria; no se guardan correos ni textos en localStorage.
+const demoReviews: DemoReview[] = [
+  seedReview(101, 5, 1), seedReview(101, 4, 2), seedReview(101, 5, 3), seedReview(102, 4, 4), seedReview(102, 4, 5),
+  seedReview(103, 3, 6), seedReview(104, 5, 7), seedReview(104, 5, 8), seedReview(104, 4, 9), seedReview(104, 5, 10),
+]
+let nextReviewId = 90000
+
+const plain = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+function reputationOf(medicoId: number) {
+  const items = demoReviews.filter((item) => item.medicoId === medicoId)
+  const total = items.length
+  return { total, promedio: total ? Math.round((items.reduce((sum, item) => sum + item.puntuacion, 0) / total) * 10) / 10 : null }
+}
+function demoDoctor(id: number): DemoDoctor {
+  const found = DEMO_DOCTORS.find((item) => item.id === id)
+  if (!found) throw new ApiError(404, 'Este perfil no está disponible.')
+  return found
+}
+function toSummary(doctor: DemoDoctor): DoctorSummary {
+  const stats = reputationOf(doctor.id)
+  return {
+    id: doctor.id, nombres: doctor.nombres, apellidos: doctor.apellidos, fotoUrl: null, colegiatura: doctor.colegiatura,
+    estadoColegiatura: 'VERIFICADA',
+    especialidades: store().specialties.filter((item) => doctor.especialidadIds.includes(item.id)).map(({ id, nombre }) => ({ id, nombre })),
+    ciudades: [...new Set(doctor.centros.map((center) => center.ciudad))],
+    promedioCalificacion: stats.promedio, totalResenas: stats.total,
+  }
+}
+
 export const mockApi = {
   async resume(token: string): Promise<Session> {
     await pause()
@@ -151,7 +204,8 @@ export const mockApi = {
     save()
     return copy(store().profiles[username])
   },
-  async listSpecialties(token: string) { await pause(); userFromToken(token, 'ROLE_MEDICO'); return copy(store().specialties.filter((item) => item.habilitada)) },
+  // Igual que el backend (permitAll): el catálogo de especialidades activas es público y el token es opcional.
+  async listSpecialties() { await pause(); return copy(store().specialties.filter((item) => item.habilitada)) },
   async listAdminSpecialties(token: string) { await pause(); userFromToken(token, 'ROLE_ADMIN'); return copy(store().specialties) },
   async createSpecialty(token: string, nombre: string) {
     await pause(); userFromToken(token, 'ROLE_ADMIN')
@@ -186,5 +240,77 @@ export const mockApi = {
     const items = store().centers[user] ?? []
     if (!items.some((item) => item.id === id)) throw new ApiError(404, 'Centro no encontrado.')
     store().centers[user] = items.filter((item) => item.id !== id); save()
+  },
+
+  async listAdminAudit(token: string, page = 0, size = 20) {
+    userFromToken(token, 'ROLE_ADMIN')
+    return createMockAuditRepository('normal').list({ page: Math.max(0, Math.trunc(page)), size: Math.min(100, Math.max(1, Math.trunc(size))) })
+  },
+
+  async searchDoctors(filters: DoctorSearchFilters = {}): Promise<PageResponse<DoctorSummary>> {
+    await pause()
+    const size = Math.min(50, Math.max(1, Math.trunc(filters.size ?? 10)))
+    const page = Math.max(0, Math.trunc(filters.page ?? 0))
+    const name = plain(filters.nombre?.trim() ?? '')
+    const city = plain(filters.ciudad?.trim() ?? '')
+    const license = filters.colegiatura?.trim().toLowerCase() ?? ''
+    const matches = DEMO_DOCTORS.map(toSummary).filter((item) =>
+      (!name || plain(`${item.nombres} ${item.apellidos}`).includes(name))
+      && (filters.especialidadId === undefined || item.especialidades.some((entry) => entry.id === filters.especialidadId))
+      && (!city || item.ciudades.some((entry) => plain(entry).includes(city)))
+      && (!license || item.colegiatura.toLowerCase().includes(license))
+      && (filters.calificacionMinima === undefined || (item.promedioCalificacion != null && item.promedioCalificacion >= filters.calificacionMinima)),
+    ).sort((a, b) => a.apellidos.localeCompare(b.apellidos, 'es') || a.nombres.localeCompare(b.nombres, 'es'))
+    return { items: matches.slice(page * size, (page + 1) * size), page, size, total: matches.length }
+  },
+  async getDoctorDetail(id: number): Promise<DoctorDetail> {
+    await pause()
+    const doctor = demoDoctor(id)
+    return { ...toSummary(doctor), biografia: doctor.biografia, aniosExperiencia: doctor.aniosExperiencia, centros: copy(doctor.centros) }
+  },
+
+  // Sustituto aislado del backend: la lógica de emergencia/fallback real vive en el servidor (Integrantes 1 y 3).
+  async triage(mensaje: string): Promise<TriageResponse> {
+    await new Promise((resolve) => setTimeout(resolve, 650))
+    const text = plain(mensaje.trim())
+    if (!text || text.length > 1000) throw new ApiError(400, 'Escribe una consulta de entre 1 y 1000 caracteres.')
+    if (/dolor de pecho|no puedo respirar|desmayo|sangrado abundante|convulsi/.test(text)) {
+      return { emergencia: true, fallback: false, especialidad: null, orientacion: 'Busca atención de urgencia de inmediato o llama a emergencias.' }
+    }
+    if (text.includes('simular caida')) {
+      return { emergencia: false, fallback: true, especialidad: null, orientacion: 'El asistente no está disponible. Continúa con la búsqueda manual en el directorio.' }
+    }
+    const id = /corazon|presion|palpitaciones/.test(text) ? 2 : /nino|bebe|hijo|pediatr/.test(text) ? 3 : 1
+    const specialty = store().specialties.find((item) => item.id === id && item.habilitada)
+    return {
+      emergencia: false, fallback: false, especialidad: specialty ? { id: specialty.id, nombre: specialty.nombre } : null,
+      orientacion: specialty ? `Por lo que cuentas, una consulta de ${specialty.nombre} puede orientarte mejor. Esto no es un diagnóstico.` : null,
+    }
+  },
+
+  async createReview(token: string, medicoId: number, value: ReviewInput): Promise<Review> {
+    await pause()
+    const paciente = userFromToken(token, 'ROLE_PACIENTE')
+    demoDoctor(medicoId)
+    if (!Number.isInteger(value.puntuacion) || value.puntuacion < 1 || value.puntuacion > 5) throw new ApiError(400, 'La puntuación debe ser un número entero de 1 a 5.')
+    const comentario = value.comentario.trim()
+    if (comentario.length > 500) throw new ApiError(400, 'El comentario admite hasta 500 caracteres.')
+    if (demoReviews.some((item) => item.medicoId === medicoId && item.paciente === paciente)) throw new ApiError(409, 'Ya calificaste a este médico. Solo se permite una reseña por paciente.')
+    const review: DemoReview = { id: nextReviewId++, medicoId, paciente, puntuacion: value.puntuacion, comentario: comentario || null, fechaCreacion: new Date().toISOString() }
+    demoReviews.push(review)
+    return { id: review.id, puntuacion: review.puntuacion, comentario: review.comentario, fechaCreacion: review.fechaCreacion }
+  },
+  async listReviews(medicoId: number, page = 0, size = 5): Promise<ReviewPage> {
+    await pause()
+    demoDoctor(medicoId)
+    const safeSize = Math.min(50, Math.max(1, Math.trunc(size)))
+    const safePage = Math.max(0, Math.trunc(page))
+    const all = demoReviews.filter((item) => item.medicoId === medicoId)
+      .sort((a, b) => b.fechaCreacion.localeCompare(a.fechaCreacion) || b.id - a.id)
+    return {
+      items: all.slice(safePage * safeSize, (safePage + 1) * safeSize)
+        .map(({ id, puntuacion, comentario, fechaCreacion }) => ({ id, puntuacion, comentario, fechaCreacion })),
+      page: safePage, size: safeSize, total: all.length, promedio: reputationOf(medicoId).promedio,
+    }
   },
 }
