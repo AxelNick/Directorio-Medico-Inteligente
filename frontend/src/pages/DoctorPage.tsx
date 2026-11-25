@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { backendAssetUrl, type CareCenter, type MedicalProfile, type Specialty } from '../data/api'
 import { service } from '../data/service'
 import { AppShell, Notice, fieldClass, primaryClass, secondaryClass } from '../components/AppShell'
@@ -80,6 +81,7 @@ export function DoctorPage() {
   const active = specialties.filter((item) => item.habilitada)
   return <AppShell eyebrow="ÁREA MÉDICA · SPRINT 2" title="Tu perfil profesional">
     <p className="mb-7 max-w-2xl text-sm leading-7 text-[#607785]">Administra la información que presentarás a los pacientes cuando el directorio público esté disponible. Tu colegiatura requiere verificación administrativa.</p>
+    <p className="mb-6"><Link to="/medico/reputacion" className="text-sm font-bold text-[#0F8B8D] underline underline-offset-4">Ver mi reputación y las opiniones de pacientes</Link></p>
     {loading && <Notice>Cargando perfil, especialidades y centros…</Notice>}
     {error && <div className="mb-5"><Notice tone="error">{error}</Notice></div>}
     {notice && <div className="mb-5"><Notice tone="success">{notice}</Notice></div>}
