@@ -78,6 +78,36 @@ export interface Review { id: number; puntuacion: number; comentario: string | n
 export interface ReviewInput { puntuacion: number; comentario: string }
 export interface ReviewPage extends PageResponse<Review> { promedio: number | null }
 
+/**
+ * Sprints 3 y 5 — administración. Contratos PROVISIONALES: siguen las rutas del mapa de endpoints del plan,
+ * pero la forma exacta de los DTO debe confirmarse cuando el backend los publique (Integrantes 1 y 3).
+ */
+export type DoctorProfileStatus = 'PENDIENTE_REVISION' | 'APROBADO' | 'SUSPENDIDO' | 'DESHABILITADO'
+export type LicenseStatus = MedicalProfile['estadoColegiatura']
+/** Fila de moderación de médicos (GET /api/v1/admin/medicos). */
+export interface AdminDoctor {
+  id: number
+  nombres: string
+  apellidos: string
+  colegiatura: string
+  estadoColegiatura: LicenseStatus
+  estadoPerfil: DoctorProfileStatus
+}
+/** Fila de administración de cuentas (GET /api/v1/admin/usuarios). Nunca incluye contraseña ni hash. */
+export interface AdminUser { id: number; username: string; rol: Role; habilitado: boolean }
+export type ReviewStatus = 'PENDIENTE_REVISION' | 'VISIBLE' | 'OCULTA'
+/** Fila de moderación de reseñas (GET /api/v1/admin/resenas). `paciente` es el identificador que el backend permita mostrar. */
+export interface AdminReview {
+  id: number
+  medicoId: number
+  medicoNombre: string
+  paciente: string
+  puntuacion: number
+  comentario: string | null
+  estado: ReviewStatus
+  fechaCreacion: string
+}
+
 export class ApiError extends Error {
   constructor(public status: number, message: string) { super(message) }
 }
@@ -235,4 +265,29 @@ export const api = {
     request<Review>(`${API_V1}/medicos/${medicoId}/resenas`, { method: 'POST', body: json(value) }, token),
   listReviews: (medicoId: number, page = 0, size = 5) =>
     request<ReviewPage>(`${API_V1}/medicos/${medicoId}/resenas${query({ page, size })}`),
+  // Sprint 5 — reputación del médico autenticado (ROLE_MEDICO): promedio, total y comentarios visibles, solo lectura.
+  getMyReputation: (token: string, page = 0, size = 5) =>
+    request<ReviewPage>(`${API_V1}/medicos/me/reputacion${query({ page, size })}`, {}, token),
+
+  // Sprint 3 — moderación de médicos (ROLE_ADMIN). PATCH parcial sobre el subrecurso de estado.
+  listAdminDoctors: (token: string, filters: { estadoPerfil?: DoctorProfileStatus; page?: number; size?: number } = {}) =>
+    request<PageResponse<AdminDoctor>>(
+      `${API_V1}/admin/medicos${query({ estadoPerfil: filters.estadoPerfil, page: filters.page, size: filters.size })}`, {}, token),
+  updateDoctorProfileStatus: (token: string, id: number, estadoPerfil: DoctorProfileStatus) =>
+    request<AdminDoctor>(`${API_V1}/admin/medicos/${id}/estado-perfil`, { method: 'PATCH', body: json({ estadoPerfil }) }, token),
+  updateDoctorLicenseStatus: (token: string, id: number, estadoColegiatura: LicenseStatus) =>
+    request<AdminDoctor>(`${API_V1}/admin/medicos/${id}/colegiatura`, { method: 'PATCH', body: json({ estadoColegiatura }) }, token),
+
+  // Sprint 3 — cuentas (ROLE_ADMIN). El backend impide el auto-bloqueo y responde 409.
+  listAdminUsers: (token: string, page = 0, size = 20) =>
+    request<PageResponse<AdminUser>>(`${API_V1}/admin/usuarios${query({ page, size })}`, {}, token),
+  updateUserStatus: (token: string, id: number, habilitado: boolean) =>
+    request<AdminUser>(`${API_V1}/admin/usuarios/${id}/estado`, { method: 'PATCH', body: json({ habilitado }) }, token),
+
+  // Sprint 5 — moderación de reseñas (ROLE_ADMIN).
+  listAdminReviews: (token: string, filters: { estado?: ReviewStatus; page?: number; size?: number } = {}) =>
+    request<PageResponse<AdminReview>>(
+      `${API_V1}/admin/resenas${query({ estado: filters.estado, page: filters.page, size: filters.size })}`, {}, token),
+  updateReviewStatus: (token: string, id: number, estado: ReviewStatus) =>
+    request<AdminReview>(`${API_V1}/admin/resenas/${id}`, { method: 'PATCH', body: json({ estado }) }, token),
 }
