@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import type { Specialty } from '../data/api'
-import { service, isDemoMode } from '../data/service'
-import { AppShell, Notice, fieldClass, primaryClass, secondaryClass } from '../components/AppShell'
+import { service } from '../data/service'
+import { Notice, fieldClass, primaryClass, secondaryClass } from '../components/AppShell'
+import { AdminSection } from '../components/admin/AdminSection'
 import { useSession } from '../session/SessionContext'
 
 export function AdminPage() {
@@ -48,7 +49,7 @@ export function AdminPage() {
     finally { setBusy(false) }
   }
 
-  return <AppShell eyebrow="ADMINISTRACIÓN · SPRINT 2" title="Catálogo de especialidades">
+  return <AdminSection title="Catálogo de especialidades">
     <p className="mb-7 max-w-2xl text-sm leading-7 text-[#607785]">Gestiona las especialidades disponibles para los perfiles médicos. Deshabilitar una entrada evita nuevas asignaciones sin borrar las existentes.</p>
     {error && <div className="mb-5"><Notice tone="error">{error}</Notice></div>}
     {notice && <div className="mb-5"><Notice tone="success">{notice}</Notice></div>}
@@ -59,6 +60,5 @@ export function AdminPage() {
       </section>
       <section className="self-start rounded-[22px] border border-[#dce9e9] bg-white p-6 shadow-sm" aria-labelledby="specialty-form-title"><h2 id="specialty-form-title" className="text-xl font-bold">{editing === null ? 'Nueva especialidad' : 'Editar especialidad'}</h2><form className="mt-6 space-y-5" onSubmit={save}><div><label htmlFor="specialty-name" className="mb-2 block text-sm font-bold">Nombre</label><input id="specialty-name" className={fieldClass} value={name} onChange={(event) => setName(event.target.value)} required maxLength={120} /></div><div className="flex flex-wrap gap-3"><button type="submit" className={primaryClass} disabled={busy}>Guardar</button>{editing !== null && <button type="button" className={secondaryClass} onClick={() => { setEditing(null); setName('') }}>Cancelar</button>}</div></form></section>
     </div>
-    {isDemoMode && <section className="mt-6 rounded-[22px] border border-[#c8dfe2] bg-[#edf7f6] p-6"><h2 className="font-bold">Auditoría de prueba</h2><p className="mt-2 text-sm leading-6 text-[#55717d]">Explora eventos ficticios y los estados de la tabla.</p><a href="/demo/auditoria" className="mt-4 inline-block text-sm font-bold text-[#0F8B8D] underline underline-offset-4">Abrir auditoría de prueba</a></section>}
-  </AppShell>
+  </AdminSection>
 }
