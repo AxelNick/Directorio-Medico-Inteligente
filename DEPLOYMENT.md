@@ -16,7 +16,7 @@ Los archivos locales `backend/.env`, `frontend/.env.local` y `frontend/.env.prod
    | `SPRING_DATASOURCE_USERNAME` | El usuario exacto que muestra **Connect**, normalmente `postgres.<ref>` |
    | `SPRING_DATASOURCE_PASSWORD` | Contraseña de la base |
 
-La aplicación ejecuta las migraciones Flyway V1–V3 al iniciar. No ejecutes las migraciones manualmente si arrancó bien. El `schema` esperado es `public` de una base nueva; no apuntes a una base con tablas existentes ajenas al proyecto. El usuario de conexión necesita permisos para crear y modificar tablas.
+Al iniciar, Hibernate crea o actualiza las tablas a partir de las entidades (`ddl-auto=update`) y la aplicación carga los datos base (roles, cuenta administrativa de desarrollo y catálogo inicial) si faltan. No hay migraciones que ejecutar. El `schema` esperado es `public` de una base nueva; no apuntes a una base con tablas existentes ajenas al proyecto. El usuario de conexión necesita permisos para crear y modificar tablas.
 
 ## 2. Render: API
 
@@ -26,7 +26,7 @@ La aplicación ejecuta las migraciones Flyway V1–V3 al iniciar. No ejecutes la
 4. Establece `APP_CORS_ALLOWED_ORIGINS` con el origen exacto de Vercel, por ejemplo `https://nombre-del-proyecto.vercel.app`, **sin barra final**. Puedes separar varios orígenes concretos con coma. No uses `*`.
 5. Despliega y comprueba `GET https://<servicio>.onrender.com/especialidades` (debe devolver JSON). El arranque puede tardar varios minutos en Free.
 
-La migración V1 crea una cuenta administrativa de desarrollo. En `prod`, su contraseña de demostración **no** permite iniciar sesión. Para usar el panel administrativo hace falta un procedimiento de provisión de administrador acordado con backend; no se incluyen credenciales reales en el repositorio.
+El arranque crea una cuenta administrativa de desarrollo. En `prod`, su contraseña de demostración **no** permite iniciar sesión. Para usar el panel administrativo hace falta un procedimiento de provisión de administrador acordado con backend; no se incluyen credenciales reales en el repositorio.
 
 ## 3. Vercel: SPA
 

@@ -7,7 +7,7 @@ import java.time.OffsetDateTime;
  * US-ADM-04: Entidad de auditoria persistida automaticamente por {@link pe.edu.uni.backend.aspect.AuditoriaAspect}.
  */
 @Entity
-@Table(name = "auditoria")
+@Table(name = "auditoria", indexes = @Index(name = "idx_auditoria_ocurrio_en", columnList = "ocurrio_en DESC, id DESC"))
 public class Auditoria {
 
     @Id
