@@ -27,7 +27,7 @@ Estado: ✅ pasa · ❌ falla · ⏳ pendiente · — no aplica en ese modo.
 | A-01 | Búsqueda por nombre | En `/directorio`, buscar un nombre sin tildes y en minúsculas | Encuentra al médico; la búsqueda la ejecuta el backend | ✅ auto | ⏳ |
 | A-02 | Filtro por especialidad | Elegir una especialidad y aplicar | Solo aparecen médicos de esa especialidad | ✅ auto | ⏳ |
 | A-03 | Paginación | Listar con tamaño de página menor al total y avanzar | Cada página trae el número pedido y el total es correcto | ✅ auto | ⏳ |
-| A-04 | Filtros combinados | Combinar nombre, especialidad, ciudad y colegiatura | Solo aparecen médicos que cumplen todos los filtros | ⏳ | ⏳ |
+| A-04 | Filtros combinados | Combinar nombre, especialidad, ciudad y colegiatura | Solo aparecen médicos que cumplen todos los filtros | ✅ auto | ⏳ |
 | A-05 | Ficha sin datos privados | Abrir la ficha de un médico | No muestra correo ni datos de la cuenta, ni acciones de edición | ✅ auto | ⏳ |
 | A-06 | Perfil pendiente no es público | Abrir la ficha de un médico pendiente de revisión | 404; tampoco aparece en el listado | ✅ auto | ⏳ |
 | A-07 | Aprobado sin CMP verificado | Aprobar un perfil con colegiatura pendiente y abrir su ficha | Sigue sin publicarse | ✅ auto | ⏳ |
@@ -50,7 +50,7 @@ Estado: ✅ pasa · ❌ falla · ⏳ pendiente · — no aplica en ese modo.
 | B-02 | Emergencia | Escribir un mensaje con una señal de riesgo | Alerta prioritaria de urgencia; no se muestra sugerencia de especialidad | ✅ auto, nav | ⏳ |
 | B-03 | Emergencia sin llamar al LLM | Repetir B-02 y revisar los logs del backend | No hay llamada al proveedor externo | — | ⏳ |
 | B-04 | Proveedor caído | Provocar timeout, 429 o 5xx del proveedor | Aviso de asistente no disponible y botón "Buscar manualmente" | ✅ auto, nav | ⏳ |
-| B-05 | Fallback conserva la especialidad | Fallback en el que el backend sí entrega una especialidad válida | "Buscar manualmente" abre el directorio filtrado por ella | ⏳ | ⏳ |
+| B-05 | Fallback conserva la especialidad | Fallback en el que el backend sí entrega una especialidad válida | "Buscar manualmente" abre el directorio filtrado por ella | ✅ auto, nav | ⏳ |
 | B-06 | Mensaje inválido | Enviar un mensaje vacío o de más de 1000 caracteres | 400 con mensaje; el chat no se bloquea | ✅ auto (solo mensaje vacío) | ⏳ |
 | B-07 | Solo orienta | Revisar varias respuestas del asistente | No diagnostica, no receta ni recomienda tratamientos | — | ⏳ |
 | B-08 | Síntomas fuera de URL y logs | Enviar un mensaje y revisar la solicitud y los logs | El texto viaja en el cuerpo del POST y no aparece completo en logs | — | ⏳ |
@@ -90,10 +90,21 @@ Estado: ✅ pasa · ❌ falla · ⏳ pendiente · — no aplica en ese modo.
 | D-07 | Caché en GET públicos | Revisar cabeceras del directorio y de respuestas privadas | `Cache-Control` o `ETag` en lo público; sin caché en lo privado | — | ⏳ |
 | D-08 | DTO sin datos internos | Revisar las respuestas JSON | No se serializan entidades JPA ni campos privados del usuario | — | ⏳ |
 
+## Revisiones de interfaz de los paneles administrativos
+
+Comprobadas a mano en el navegador el 2026-11-25. No sustituyen a los casos de arriba.
+
+| ID | Revisión | Cómo se comprobó | Resultado |
+|---|---|---|---|
+| U-01 | Vista móvil (375 px) de médicos, usuarios, reseñas y auditoría | Modo demo con el ancho de un teléfono | ✅ La tabla pasa a tarjetas, las acciones siguen disponibles y no hay desplazamiento horizontal |
+| U-02 | Estado de error de médicos, usuarios y reseñas | Modo API real contra el backend actual, que aún no tiene esos endpoints | ✅ Cada página muestra el aviso de error con el mensaje del servidor y el botón "Reintentar" |
+| U-03 | Vista móvil de la reputación del médico | No revisada | ⏳ |
+
+En U-02 el mensaje que se ve es "No tienes permiso para realizar esta acción", porque hoy el backend responde 403 a cualquier ruta que no existe (defecto D-02 de la regresión).
+
 ## Qué falta para cerrar
 
 1. Que existan en `main` los endpoints de los Integrantes 1 y 3, con CORS permitiendo `PATCH`.
 2. Confirmar las formas de los JSON y ajustar `api.ts` si difieren de las provisionales.
 3. Ejecutar la columna "API real" completa con `npm run dev:api` y guardar las evidencias.
-4. Completar en modo demo los dos casos pendientes (A-04 y B-05).
-5. Actualizar el estado de cada historia en Taiga y registrar los defectos que aparezcan.
+4. Actualizar el estado de cada historia en Taiga y registrar los defectos que aparezcan.

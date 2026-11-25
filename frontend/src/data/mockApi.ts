@@ -341,10 +341,16 @@ export const mockApi = {
     if (/dolor de pecho|no puedo respirar|desmayo|sangrado abundante|convulsi/.test(text)) {
       return { emergencia: true, fallback: false, especialidad: null, orientacion: 'Busca atención de urgencia de inmediato o llama a emergencias.' }
     }
+    const hintedId = /corazon|presion|palpitaciones/.test(text) ? 2 : /nino|bebe|hijo|pediatr/.test(text) ? 3 : null
     if (text.includes('simular caida')) {
-      return { emergencia: false, fallback: true, especialidad: null, orientacion: 'El asistente no está disponible. Continúa con la búsqueda manual en el directorio.' }
+      // Si el mensaje también nombra una especialidad reconocible, el fallback la conserva (como puede hacer el backend).
+      const hinted = store().specialties.find((item) => item.id === hintedId && item.habilitada)
+      return {
+        emergencia: false, fallback: true, especialidad: hinted ? { id: hinted.id, nombre: hinted.nombre } : null,
+        orientacion: 'El asistente no está disponible. Continúa con la búsqueda manual en el directorio.',
+      }
     }
-    const id = /corazon|presion|palpitaciones/.test(text) ? 2 : /nino|bebe|hijo|pediatr/.test(text) ? 3 : 1
+    const id = hintedId ?? 1
     const specialty = store().specialties.find((item) => item.id === id && item.habilitada)
     return {
       emergencia: false, fallback: false, especialidad: specialty ? { id: specialty.id, nombre: specialty.nombre } : null,
