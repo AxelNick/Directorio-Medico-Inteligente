@@ -1,7 +1,8 @@
 import {
-  ApiError, type CareCenter, type DoctorDetail, type DoctorSearchFilters, type DoctorSummary, type MedicalProfile,
-  type PageResponse, type Review, type ReviewInput, type ReviewPage, type Role, type Session, type Specialty,
-  type TriageResponse,
+  ApiError, type AdminDoctor, type AdminReview, type AdminUser, type CareCenter, type DoctorDetail,
+  type DoctorProfileStatus, type DoctorSearchFilters, type DoctorSummary, type LicenseStatus, type MedicalProfile,
+  type PageResponse, type Review, type ReviewInput, type ReviewPage, type ReviewStatus, type Role, type Session,
+  type Specialty, type TriageResponse,
 } from './api'
 import { createMockAuditRepository } from '../demo/mockAuditRepository'
 
@@ -112,15 +113,76 @@ const demoReviews: DemoReview[] = [
 ]
 let nextReviewId = 90000
 
+// ---- Administración y reputación (Sprints 3 y 5): estados solo en memoria; se reinician al recargar. ----
+// Médicos que aún no son públicos: sirven para probar la moderación sin alterar el directorio inicial.
+const PENDING_DOCTORS: DemoDoctor[] = ['Sofía', 'Andrés', 'Paula'].map((nombres, index) => ({
+  id: 201 + index, nombres, apellidos: ['Pendiente Demo', 'Revisión Prueba', 'Ejemplo Nuevo'][index], colegiatura: `CMP-DEMO-${201 + index}`,
+  especialidadIds: [(index % 3) + 1],
+  biografia: 'Perfil ficticio pendiente de revisión. Ninguna persona real corresponde a estos datos.',
+  aniosExperiencia: 2 + index,
+  centros: [{ id: 300 + index, nombre: `Centro pendiente ${index + 1}`, direccion: `Av. Ejemplo ${500 + index * 10}`, ciudad: DEMO_CITIES[index] }],
+}))
+const ALL_DOCTORS = [...DEMO_DOCTORS, ...PENDING_DOCTORS]
+const PROFILE_STATUSES: DoctorProfileStatus[] = ['PENDIENTE_REVISION', 'APROBADO', 'SUSPENDIDO', 'DESHABILITADO']
+const LICENSE_STATUSES: LicenseStatus[] = ['PENDIENTE_VERIFICACION', 'VERIFICADA', 'RECHAZADA']
+// Solo se guardan los estados que difieren del valor por defecto (médico aprobado y verificado; reseña visible).
+const profileStatus = new Map<number, DoctorProfileStatus>(PENDING_DOCTORS.map((item) => [item.id, 'PENDIENTE_REVISION']))
+const licenseStatus = new Map<number, LicenseStatus>(PENDING_DOCTORS.map((item) => [item.id, 'PENDIENTE_VERIFICACION']))
+const profileStatusOf = (id: number): DoctorProfileStatus => profileStatus.get(id) ?? 'APROBADO'
+const licenseStatusOf = (id: number): LicenseStatus => licenseStatus.get(id) ?? 'VERIFICADA'
+/** Igual que el backend: el directorio solo publica perfiles aprobados con colegiatura verificada. */
+const isPublic = (doctor: DemoDoctor) => profileStatusOf(doctor.id) === 'APROBADO' && licenseStatusOf(doctor.id) === 'VERIFICADA'
+
+const pendingReviews = [seedReview(105, 2, 11), seedReview(102, 1, 12)]
+demoReviews.push(...pendingReviews)
+const reviewStatus = new Map<number, ReviewStatus>(pendingReviews.map((item) => [item.id, 'PENDIENTE_REVISION']))
+const reviewStatusOf = (id: number): ReviewStatus => reviewStatus.get(id) ?? 'VISIBLE'
+/** Solo las reseñas visibles se listan públicamente y cuentan para el promedio. */
+const visibleReviewsOf = (medicoId: number) => demoReviews.filter((item) => item.medicoId === medicoId && reviewStatusOf(item.id) === 'VISIBLE')
+
+const blockedUsers = new Set<string>()
+const DEMO_SELF_DOCTOR_ID = 101 // El médico de demostración consulta la reputación de este perfil ficticio.
+
+function paginate<T>(items: T[], page = 0, size = 20): PageResponse<T> {
+  const safeSize = Math.min(100, Math.max(1, Math.trunc(size)))
+  const safePage = Math.max(0, Math.trunc(page))
+  return { items: items.slice(safePage * safeSize, (safePage + 1) * safeSize), page: safePage, size: safeSize, total: items.length }
+}
+function adminDoctor(id: number): DemoDoctor {
+  const found = ALL_DOCTORS.find((item) => item.id === id)
+  if (!found) throw new ApiError(404, 'El médico no existe.')
+  return found
+}
+const toAdminDoctor = (doctor: DemoDoctor): AdminDoctor => ({
+  id: doctor.id, nombres: doctor.nombres, apellidos: doctor.apellidos, colegiatura: doctor.colegiatura,
+  estadoColegiatura: licenseStatusOf(doctor.id), estadoPerfil: profileStatusOf(doctor.id),
+})
+function demoUsers(): AdminUser[] {
+  const accounts = [
+    ...Object.entries(FIXED_USERS).map(([username, value]) => ({ username, rol: value.rol })),
+    ...[...registered].map(([username, value]) => ({ username, rol: value.rol })),
+  ]
+  return accounts.map((account, index) => ({ id: index + 1, ...account, habilitado: !blockedUsers.has(account.username) }))
+}
+function toAdminReview(review: DemoReview): AdminReview {
+  const doctor = ALL_DOCTORS.find((item) => item.id === review.medicoId)
+  return {
+    id: review.id, medicoId: review.medicoId, medicoNombre: doctor ? `${doctor.nombres} ${doctor.apellidos}` : `Médico ${review.medicoId}`,
+    // Alias sin correo: la moderación no necesita identificar al paciente.
+    paciente: `Paciente ${review.id}`, puntuacion: review.puntuacion, comentario: review.comentario,
+    estado: reviewStatusOf(review.id), fechaCreacion: review.fechaCreacion,
+  }
+}
+
 const plain = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
 function reputationOf(medicoId: number) {
-  const items = demoReviews.filter((item) => item.medicoId === medicoId)
+  const items = visibleReviewsOf(medicoId)
   const total = items.length
   return { total, promedio: total ? Math.round((items.reduce((sum, item) => sum + item.puntuacion, 0) / total) * 10) / 10 : null }
 }
 function demoDoctor(id: number): DemoDoctor {
-  const found = DEMO_DOCTORS.find((item) => item.id === id)
-  if (!found) throw new ApiError(404, 'Este perfil no está disponible.')
+  const found = ALL_DOCTORS.find((item) => item.id === id)
+  if (!found || !isPublic(found)) throw new ApiError(404, 'Este perfil no está disponible.')
   return found
 }
 function toSummary(doctor: DemoDoctor): DoctorSummary {
@@ -143,6 +205,7 @@ export const mockApi = {
       try {
         const username = userFromToken(token, rol)
         const fixed = FIXED_USERS[username as keyof typeof FIXED_USERS]
+        if (blockedUsers.has(username)) break
         if (fixed?.rol === rol || registered.get(username)?.rol === rol) return { token, username, rol }
       } catch { break }
     }
@@ -155,6 +218,7 @@ export const mockApi = {
     const role = fixed?.password === password ? fixed.rol
       : temporary?.password === password ? temporary.rol : null
     if (!role) throw new ApiError(401, 'Credenciales de prueba inválidas.')
+    if (blockedUsers.has(username)) throw new ApiError(403, 'Esta cuenta está bloqueada. Contacta a un administrador.')
     return { token: `demo:${role}:${encodeURIComponent(username)}`, username, rol: role }
   },
   async register(username: string, password: string, colegiatura: string) {
@@ -254,7 +318,7 @@ export const mockApi = {
     const name = plain(filters.nombre?.trim() ?? '')
     const city = plain(filters.ciudad?.trim() ?? '')
     const license = filters.colegiatura?.trim().toLowerCase() ?? ''
-    const matches = DEMO_DOCTORS.map(toSummary).filter((item) =>
+    const matches = ALL_DOCTORS.filter(isPublic).map(toSummary).filter((item) =>
       (!name || plain(`${item.nombres} ${item.apellidos}`).includes(name))
       && (filters.especialidadId === undefined || item.especialidades.some((entry) => entry.id === filters.especialidadId))
       && (!city || item.ciudades.some((entry) => plain(entry).includes(city)))
@@ -305,12 +369,78 @@ export const mockApi = {
     demoDoctor(medicoId)
     const safeSize = Math.min(50, Math.max(1, Math.trunc(size)))
     const safePage = Math.max(0, Math.trunc(page))
-    const all = demoReviews.filter((item) => item.medicoId === medicoId)
+    const all = visibleReviewsOf(medicoId)
       .sort((a, b) => b.fechaCreacion.localeCompare(a.fechaCreacion) || b.id - a.id)
     return {
       items: all.slice(safePage * safeSize, (safePage + 1) * safeSize)
         .map(({ id, puntuacion, comentario, fechaCreacion }) => ({ id, puntuacion, comentario, fechaCreacion })),
       page: safePage, size: safeSize, total: all.length, promedio: reputationOf(medicoId).promedio,
     }
+  },
+  async getMyReputation(token: string, page = 0, size = 5): Promise<ReviewPage> {
+    await pause()
+    const username = userFromToken(token, 'ROLE_MEDICO')
+    const medicoId = username === 'medico.demo@prueba.local' ? DEMO_SELF_DOCTOR_ID : null
+    const all = (medicoId === null ? [] : visibleReviewsOf(medicoId))
+      .sort((a, b) => b.fechaCreacion.localeCompare(a.fechaCreacion) || b.id - a.id)
+      .map(({ id, puntuacion, comentario, fechaCreacion }) => ({ id, puntuacion, comentario, fechaCreacion }))
+    return { ...paginate(all, page, Math.min(50, size)), promedio: medicoId === null ? null : reputationOf(medicoId).promedio }
+  },
+
+  async listAdminDoctors(token: string, filters: { estadoPerfil?: DoctorProfileStatus; page?: number; size?: number } = {}): Promise<PageResponse<AdminDoctor>> {
+    await pause(); userFromToken(token, 'ROLE_ADMIN')
+    const items = ALL_DOCTORS.map(toAdminDoctor)
+      .filter((item) => !filters.estadoPerfil || item.estadoPerfil === filters.estadoPerfil)
+      .sort((a, b) => a.apellidos.localeCompare(b.apellidos, 'es') || a.nombres.localeCompare(b.nombres, 'es'))
+    return paginate(items, filters.page, filters.size)
+  },
+  async updateDoctorProfileStatus(token: string, id: number, estadoPerfil: DoctorProfileStatus): Promise<AdminDoctor> {
+    await pause(); userFromToken(token, 'ROLE_ADMIN')
+    const doctor = adminDoctor(id)
+    if (!PROFILE_STATUSES.includes(estadoPerfil)) throw new ApiError(400, 'Estado de perfil no válido.')
+    if (profileStatusOf(id) === estadoPerfil) throw new ApiError(409, 'El perfil ya tiene ese estado.')
+    profileStatus.set(id, estadoPerfil)
+    return toAdminDoctor(doctor)
+  },
+  async updateDoctorLicenseStatus(token: string, id: number, estadoColegiatura: LicenseStatus): Promise<AdminDoctor> {
+    await pause(); userFromToken(token, 'ROLE_ADMIN')
+    const doctor = adminDoctor(id)
+    if (!LICENSE_STATUSES.includes(estadoColegiatura)) throw new ApiError(400, 'Estado de colegiatura no válido.')
+    if (licenseStatusOf(id) === estadoColegiatura) throw new ApiError(409, 'La colegiatura ya tiene ese estado.')
+    licenseStatus.set(id, estadoColegiatura)
+    return toAdminDoctor(doctor)
+  },
+
+  async listAdminUsers(token: string, page = 0, size = 20): Promise<PageResponse<AdminUser>> {
+    await pause(); userFromToken(token, 'ROLE_ADMIN')
+    return paginate(demoUsers(), page, size)
+  },
+  async updateUserStatus(token: string, id: number, habilitado: boolean): Promise<AdminUser> {
+    await pause()
+    const actor = userFromToken(token, 'ROLE_ADMIN')
+    const user = demoUsers().find((item) => item.id === id)
+    if (!user) throw new ApiError(404, 'La cuenta no existe.')
+    if (user.username === actor && !habilitado) throw new ApiError(409, 'No puedes bloquear tu propia cuenta.')
+    if (user.habilitado === habilitado) throw new ApiError(409, habilitado ? 'La cuenta ya está habilitada.' : 'La cuenta ya está bloqueada.')
+    if (habilitado) blockedUsers.delete(user.username)
+    else blockedUsers.add(user.username)
+    return { ...user, habilitado }
+  },
+
+  async listAdminReviews(token: string, filters: { estado?: ReviewStatus; page?: number; size?: number } = {}): Promise<PageResponse<AdminReview>> {
+    await pause(); userFromToken(token, 'ROLE_ADMIN')
+    const items = demoReviews.map(toAdminReview)
+      .filter((item) => !filters.estado || item.estado === filters.estado)
+      .sort((a, b) => b.fechaCreacion.localeCompare(a.fechaCreacion) || b.id - a.id)
+    return paginate(items, filters.page, filters.size)
+  },
+  async updateReviewStatus(token: string, id: number, estado: ReviewStatus): Promise<AdminReview> {
+    await pause(); userFromToken(token, 'ROLE_ADMIN')
+    const review = demoReviews.find((item) => item.id === id)
+    if (!review) throw new ApiError(404, 'La reseña no existe.')
+    if (estado !== 'VISIBLE' && estado !== 'OCULTA') throw new ApiError(400, 'Una reseña solo puede quedar visible u oculta.')
+    if (reviewStatusOf(id) === estado) throw new ApiError(409, 'La reseña ya tiene ese estado.')
+    reviewStatus.set(id, estado)
+    return toAdminReview(review)
   },
 }
