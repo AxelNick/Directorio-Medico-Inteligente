@@ -3,6 +3,8 @@
 Responsable: Integrante 4 (frontend administrativo, integración y QA).
 Fecha de ejecución: 2026-11-25. Código probado: `main` en `afc9e3c`.
 
+> **Actualización (2026-11-25): el proyecto ya no usa Flyway.** Por indicación del profesor se retiraron las migraciones en la rama `chore/quitar-flyway` (commit `4200fd0`): Hibernate crea las tablas (`ddl-auto=update`) y `DatosIniciales` carga roles, administrador de desarrollo y catálogo al arrancar. Los casos y defectos afectados están marcados abajo; el resto de resultados corresponde a la ejecución original sobre `main`.
+
 ## Entorno
 
 - Backend Spring Boot con el perfil `local` (H2 en memoria, modo PostgreSQL), JDK 25, puerto 8080.
@@ -12,8 +14,7 @@ Fecha de ejecución: 2026-11-25. Código probado: `main` en `afc9e3c`.
 
 ### Límites de esta ejecución
 
-- **No se probó contra PostgreSQL.** La máquina no tiene Docker. El caso "BD vacía y migraciones Flyway" queda pendiente (ver R-01).
-- El perfil `local` no ejecuta Flyway y crea el esquema con Hibernate, así que no demuestra que las migraciones y las entidades coincidan.
+- **No se probó contra PostgreSQL.** La máquina no tiene Docker. El arranque desde una base PostgreSQL vacía queda pendiente (ver R-01).
 - Las pruebas de API se hicieron con `curl` contra el backend; las de interfaz, en el navegador contra el frontend en modo API.
 
 ## Resultados
@@ -24,9 +25,9 @@ Estado: ✅ pasa · ❌ falla · ⚠️ pasa con observación · ⏳ pendiente.
 
 | ID | Caso | Resultado esperado | Resultado obtenido | Estado |
 |---|---|---|---|---|
-| R-01 | Arranque desde BD vacía con Flyway en PostgreSQL | V1, V2 y V3 se aplican y Hibernate valida el esquema | No ejecutado: sin PostgreSQL disponible | ⏳ |
-| R-02 | Arranque con el perfil `local` tal como está en el repositorio | Backend utilizable para pruebas | Arranca, pero sin roles ni administrador; registro y login fallan (D-01) | ❌ |
-| R-03 | Arranque con el perfil `local` más datos iniciales | Backend utilizable | Arranca y responde; catálogo con 5 especialidades | ✅ |
+| R-01 | Arranque desde BD vacía en PostgreSQL (sin Flyway, en `chore/quitar-flyway`) | Hibernate crea las tablas y `DatosIniciales` carga los datos base | No ejecutado: sin PostgreSQL disponible | ⏳ |
+| R-02 | Arranque con el perfil `local` tal como está en el repositorio | Backend utilizable para pruebas | En `main`: arranca sin roles ni administrador; registro y login fallan (D-01). Repetido en `chore/quitar-flyway`: catálogo cargado, registro, login de admin, perfil, centros y auditoría responden bien | ❌ en `main` · ✅ en `chore/quitar-flyway` |
+| R-03 | Arranque con el perfil `local` más datos iniciales cargados a mano (solo `main`) | Backend utilizable | Arranca y responde; catálogo con 5 especialidades | ✅ |
 
 ### Registro, login y JWT
 
@@ -108,11 +109,11 @@ Estado: ✅ pasa · ❌ falla · ⚠️ pasa con observación · ⏳ pendiente.
 
 | ID | Severidad | Descripción | Cómo reproducir | Responsable sugerido |
 |---|---|---|---|---|
-| D-01 | Media | El perfil `local` no deja el backend utilizable: desactiva Flyway y no carga roles ni administrador. Registrar devuelve error ("No existe el rol ROLE_MEDICO") y el admin de ejemplo no puede entrar. | `mvnw spring-boot:run -Dspring-boot.run.profiles=local` y luego `POST /auth/register` | Integrante 3 |
+| D-01 | Media | El perfil `local` no deja el backend utilizable: desactiva Flyway y no carga roles ni administrador. Registrar devuelve error ("No existe el rol ROLE_MEDICO") y el admin de ejemplo no puede entrar. | `mvnw spring-boot:run -Dspring-boot.run.profiles=local` y luego `POST /auth/register` | Resuelto en `chore/quitar-flyway` (pendiente de fusionar) |
 | D-02 | Media | Las rutas protegidas responden 403 sin cuerpo cuando falta el token; el contrato del equipo pide 401 para "no autenticado". Además, un error interno no controlado también llega como 403 vacío, lo que oculta fallos del servidor. | `GET /admin/auditoria` sin cabecera `Authorization` | Integrante 3 |
 | D-03 | Baja | La auditoría registra la creación de un centro de atención, pero no su edición ni su eliminación. | Crear, editar y borrar un centro; consultar `/admin/auditoria` | Integrante 3 (cobertura AOP) |
 | D-04 | Alta para Sprints 3 y 5 | CORS no permite `PATCH`. Los endpoints de moderación (`PATCH /api/v1/admin/...`) fallarán desde el navegador cuando frontend y backend estén en orígenes distintos. | Preflight `OPTIONS` con `Access-Control-Request-Method: PATCH` | Integrante 3 |
-| D-05 | Baja | La migración V3 no corre en H2 (error "tipo de dato desconocido", probablemente por `TIMESTAMPTZ`), por lo que no se puede activar Flyway en el perfil `local`. No afecta a PostgreSQL. | Arrancar el perfil `local` con `spring.flyway.enabled=true` | Integrante 3 |
+| D-05 | Baja | La migración V3 no corre en H2 (error "tipo de dato desconocido", probablemente por `TIMESTAMPTZ`), por lo que no se puede activar Flyway en el perfil `local`. No afecta a PostgreSQL. | Arrancar el perfil `local` con `spring.flyway.enabled=true` | Ya no aplica: Flyway se retiró en `chore/quitar-flyway` |
 
 ## Estado de los Sprints 3 a 5 en `main`
 
@@ -125,6 +126,6 @@ Solo como referencia para el carry-over; no forma parte de esta regresión. Ning
 
 ## Pendiente
 
-- Ejecutar R-01 en una máquina con PostgreSQL (Docker o instalación nativa en el puerto 5433).
+- Fusionar `chore/quitar-flyway` y ejecutar R-01 en una máquina con PostgreSQL (Docker o instalación nativa en el puerto 5433).
 - Repetir R-17 y R-44 cuando el Integrante 3 corrija D-02 y D-04.
-- Registrar D-01 a D-05 como incidencias en Taiga.
+- Registrar D-02, D-03 y D-04 como incidencias en Taiga; D-01 y D-05 se cierran al fusionar `chore/quitar-flyway`.
