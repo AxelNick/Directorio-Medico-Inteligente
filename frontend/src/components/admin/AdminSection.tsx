@@ -4,6 +4,8 @@ import { AppShell } from '../AppShell'
 // Solo se listan secciones con página registrada en el router (main.tsx).
 const SECTIONS = [
   { to: '/admin', label: 'Especialidades', end: true },
+  { to: '/admin/medicos', label: 'Médicos', end: false },
+  { to: '/admin/usuarios', label: 'Usuarios', end: false },
   { to: '/admin/resenas', label: 'Reseñas', end: false },
   { to: '/admin/auditoria', label: 'Auditoría', end: false },
 ]
