@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 import type { TriageResponse } from '../../data/api'
+import { EmergencyAlert } from './EmergencyAlert'
+import { TriageFallback } from './TriageFallback'
 
 export type ChatMsg =
   | { id: number; role: 'user'; text: string }
@@ -21,15 +23,8 @@ export function ChatMessage({ message }: { message: ChatMsg }) {
     <span className="sr-only">Asistente: </span>
     {text && <p>{text}</p>}
     {error && <div role="alert"><p className="text-[#893f32]">{error}</p><Link to="/directorio" className={`${manualLink} text-[#0F8B8D]`}>Buscar manualmente</Link></div>}
-    {triage?.emergencia && <div role="alert" className="rounded-xl border-2 border-[#c0392b] bg-[#fdecea] p-3 text-[#7b1e14]">
-      <p className="font-bold">Posible emergencia: busca atención de urgencia ahora.</p>
-      {triage.orientacion && <p className="mt-1">{triage.orientacion}</p>}
-    </div>}
-    {triage && !triage.emergencia && triage.fallback && <div role="status" className="rounded-xl border border-[#ecd29a] bg-[#fff8e6] p-3 text-[#6b4b00]">
-      <p className="font-bold">El asistente no está disponible en este momento.</p>
-      {triage.orientacion && <p className="mt-1">{triage.orientacion}</p>}
-      <Link to="/directorio" className={manualLink}>Buscar manualmente</Link>
-    </div>}
+    {triage?.emergencia && <EmergencyAlert orientacion={triage.orientacion} />}
+    {triage && !triage.emergencia && triage.fallback && <TriageFallback orientacion={triage.orientacion} especialidad={triage.especialidad} />}
     {triage && !triage.emergencia && !triage.fallback && <div>
       {triage.orientacion && <p>{triage.orientacion}</p>}
       {triage.especialidad
