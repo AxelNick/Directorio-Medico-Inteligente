@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 
 /** Consultorio o clinica donde atiende un medico (US-MED-04). Lado N de la relacion 1:N. */
 @Entity
-@Table(name = "centros_atencion")
+@Table(name = "centros_atencion", indexes = @Index(name = "idx_centros_medico", columnList = "medico_id"))
 public class CentroAtencion {
 
     @Id

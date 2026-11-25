@@ -68,7 +68,7 @@ public class AuthController {
             String normUser = username.trim().toLowerCase();
             Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(normUser);
             
-            // La cuenta sembrada en V1 nunca puede autenticarse en producción.
+            // La cuenta de desarrollo creada por DatosIniciales nunca puede autenticarse en producción.
             if (usuarioOpt.isPresent() && (demoAdminLoginEnabled || !"admin@uni.edu.pe".equals(normUser))) {
                 Usuario u = usuarioOpt.get();
                 if (Boolean.TRUE.equals(u.getHabilitado()) && passwordEncoder.matches(password, u.getPassword())) {
@@ -80,7 +80,7 @@ public class AuthController {
                 }
             }
 
-            // Compatibilidad con la cuenta administrativa de desarrollo sembrada en V1.
+            // Compatibilidad con la cuenta administrativa de desarrollo creada por DatosIniciales.
             // Solo funciona mientras esa cuenta exista, conserve ROLE_ADMIN y este habilitada.
             if (demoAdminLoginEnabled && "admin@uni.edu.pe".equals(normUser) && "admin123".equals(password)
                     && usuarioOpt.filter(u -> Boolean.TRUE.equals(u.getHabilitado())

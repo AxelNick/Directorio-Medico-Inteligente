@@ -23,7 +23,7 @@ Empodera a los profesionales de la salud brindándoles herramientas de autogesti
 | **Seguridad** | Spring Security + JWT | Autenticación basada en tokens y control de acceso por roles (RBAC). |
 | **Base de Datos** | PostgreSQL 15+ | Persistencia relacional de datos. |
 | **ORM / Persistencia**| Spring Data JPA + Hibernate | Mapeo objeto-relacional. |
-| **Migraciones DB** | Flyway | Control de versiones del esquema de base de datos. |
+| **Esquema de BD** | Hibernate (`ddl-auto=update`) | Las tablas se crean desde las entidades JPA; los datos base se cargan al arrancar. Sin migraciones. |
 | **Frontend SPA** | React 18 + TypeScript | Interfaz de usuario interactiva y tipada. |
 | **Diseño y Estilos** | Tailwind CSS | Estilos adaptables (Azul `#1E3A5F`, Turquesa `#0F8B8D`). |
 | **Inteligencia Artificial**| API REST de LLM Externa | Chatbot de triage operativo y derivación a especialidades. |
