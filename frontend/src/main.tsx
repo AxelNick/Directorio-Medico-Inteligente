@@ -6,7 +6,9 @@ import { AuthPage } from './pages/AuthPage'
 import { DoctorPage } from './pages/DoctorPage'
 import { AdminPage } from './pages/AdminPage'
 import { AuditoriaPage } from './pages/admin/AuditoriaPage'
+import { ModeracionMedicosPage } from './pages/admin/ModeracionMedicosPage'
 import { ModeracionResenasPage } from './pages/admin/ModeracionResenasPage'
+import { UsuariosPage } from './pages/admin/UsuariosPage'
 import { ReputacionPage } from './pages/medico/ReputacionPage'
 import { PatientPage } from './pages/PatientPage'
 import { DirectoryPage } from './pages/DirectoryPage'
@@ -35,7 +37,9 @@ if (import.meta.env.DEV && window.location.pathname === '/demo/auditoria') {
     <Route path="/medico" element={<Protected role="ROLE_MEDICO"><DoctorPage /></Protected>} />
     <Route path="/admin" element={<Protected role="ROLE_ADMIN"><AdminPage /></Protected>} />
     <Route path="/admin/auditoria" element={<Protected role="ROLE_ADMIN"><AuditoriaPage /></Protected>} />
-    <Route path="/admin/resenas" element={<Protected role="ROLE_ADMIN"><ModeracionResenasPage /></Protected>} />
+    <Route path="/admin/medicos" element={<Protected role="ROLE_ADMIN"><ModeracionMedicosPage /></Protected>} />
+    <Route path="/admin/usuarios" element={<Protected role="ROLE_ADMIN"><UsuariosPage /></Protected>} />
+    <Route path="/admin/resenas"element={<Protected role="ROLE_ADMIN"><ModeracionResenasPage /></Protected>} />
     <Route path="/medico/reputacion" element={<Protected role="ROLE_MEDICO"><ReputacionPage /></Protected>} />
     <Route path="/paciente" element={<Protected role="ROLE_PACIENTE"><PatientPage /></Protected>} />
     <Route path="*" element={<main className="flex min-h-screen flex-col items-center justify-center gap-5 bg-[#f2f9f8] px-6 text-center"><p className="text-sm font-bold uppercase tracking-[.2em] text-[#0F8B8D]">Página no disponible</p><h1 className="text-4xl font-bold tracking-tight text-[#173454]">Aún no hay contenido en esta ruta.</h1><a href="/" className="rounded-full bg-[#1E3A5F] px-6 py-3 text-sm font-bold text-white">Volver al inicio</a></main>} />
