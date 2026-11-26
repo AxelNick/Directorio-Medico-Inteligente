@@ -6,7 +6,7 @@ Los archivos locales `backend/.env`, `frontend/.env.local` y `frontend/.env.prod
 
 ## 1. Supabase: base de datos
 
-1. Crea un proyecto PostgreSQL. En **Connect**, copia el host, usuario y puerto de **Session pooler**. Usa el puerto **5432**, no el de Transaction pooler (6543), para el backend JDBC y Flyway. El pooler de sesión permite conectarse desde redes IPv4.
+1. Crea un proyecto PostgreSQL. En **Connect**, copia el host, usuario y puerto de **Session pooler**. Usa el puerto **5432**, no el de Transaction pooler (6543), para el backend JDBC. El pooler de sesión permite conectarse desde redes IPv4.
 2. Guarda en un gestor de secretos la contraseña de la base. No la agregues a Git ni al frontend.
 3. En Render se ingresarán por separado:
 

@@ -4,24 +4,47 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
-import java.security.Key;
 import java.nio.charset.StandardCharsets;
+import java.security.Key;
+import java.util.Arrays;
 import java.util.Date;
 
 @Component
 public class JwtUtils {
 
+    private static final int MIN_SECRET_BYTES = 32;
+
     private final Key key;
     private final int jwtExpirationMs = 86400000; // 24 horas
 
     public JwtUtils(@Value("${app.jwt.secret:}") String secret) {
-        // En desarrollo sin configuración se conserva la clave efímera anterior.
-        // El perfil prod exige JWT_SECRET y mantiene las sesiones tras reinicios.
-        this.key = secret.isBlank() ? Keys.secretKeyFor(SignatureAlgorithm.HS256)
-                : Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this(secret, false);
+    }
+
+    @Autowired
+    public JwtUtils(@Value("${app.jwt.secret:}") String secret, Environment environment) {
+        this(secret, environment != null && Arrays.asList(environment.getActiveProfiles()).contains("prod"));
+    }
+
+    JwtUtils(String secret, boolean requireConfiguredSecret) {
+        if (secret == null || secret.isBlank()) {
+            if (requireConfiguredSecret) {
+                throw new IllegalStateException("JWT_SECRET es obligatorio cuando el perfil prod esta activo");
+            }
+            // En desarrollo sin configuracion se conserva la clave efimera local.
+            this.key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+            return;
+        }
+        byte[] bytes = secret.getBytes(StandardCharsets.UTF_8);
+        if (bytes.length < MIN_SECRET_BYTES) {
+            throw new IllegalArgumentException("app.jwt.secret debe tener al menos 32 bytes para HS256");
+        }
+        this.key = Keys.hmacShaKeyFor(bytes);
     }
 
     public String generarToken(String username, String rol) {

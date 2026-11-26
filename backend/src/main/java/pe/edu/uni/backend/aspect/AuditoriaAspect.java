@@ -7,11 +7,16 @@ import org.aspectj.lang.annotation.Aspect;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
 import pe.edu.uni.backend.dto.ActualizarEspecialidadRequest;
 import pe.edu.uni.backend.dto.ActualizarPerfilRequest;
+import pe.edu.uni.backend.dto.CentroAtencionRequest;
 import pe.edu.uni.backend.dto.CentroAtencionResponse;
+import pe.edu.uni.backend.dto.PerfilMedicoResponse;
+import pe.edu.uni.backend.entity.CentroAtencion;
 import pe.edu.uni.backend.entity.Especialidad;
 import pe.edu.uni.backend.entity.Medico;
+import pe.edu.uni.backend.repository.CentroAtencionRepository;
 import pe.edu.uni.backend.repository.EspecialidadRepository;
 import pe.edu.uni.backend.repository.MedicoRepository;
 import pe.edu.uni.backend.service.AuditoriaService;
@@ -23,9 +28,8 @@ import java.util.stream.Collectors;
  * US-ADM-04: Capa Transversal AOP para captura automatica de logs de auditoria.
  *
  * Patron de Diseno GoF: PROXY (Estructural).
- * Spring AOP envuelve los beans de servicio (MedicoService, EspecialidadService) en un Proxy dinamico.
- * Este aspecto intercepta las operaciones de negocio sin contaminar el codigo de dominio
- * (Separacion de Responsabilidades / SRP). Nunca registra contrasenas, hashes ni tokens JWT.
+ * Spring AOP envuelve los beans de servicio en un Proxy dinamico.
+ * Nunca registra contrasenas, hashes, tokens JWT ni texto completo de sintomas.
  */
 @Aspect
 @Component
@@ -34,13 +38,16 @@ public class AuditoriaAspect {
     private final AuditoriaService auditoriaService;
     private final MedicoRepository medicoRepository;
     private final EspecialidadRepository especialidadRepository;
+    private final CentroAtencionRepository centroAtencionRepository;
 
     public AuditoriaAspect(AuditoriaService auditoriaService,
                            MedicoRepository medicoRepository,
-                           EspecialidadRepository especialidadRepository) {
+                           EspecialidadRepository especialidadRepository,
+                           CentroAtencionRepository centroAtencionRepository) {
         this.auditoriaService = auditoriaService;
         this.medicoRepository = medicoRepository;
         this.especialidadRepository = especialidadRepository;
+        this.centroAtencionRepository = centroAtencionRepository;
     }
 
     /**
@@ -88,6 +95,32 @@ public class AuditoriaAspect {
             auditoriaService.registrarEvento(actor, "ACTUALIZAR", "Perfil médico", "especialidadIds", espAnterior, espNueva);
         }
 
+        return resultado;
+    }
+
+    /**
+     * Intercepta la actualizacion de fotografia de perfil registrando solo la URL resultante.
+     */
+    @Around("execution(* pe.edu.uni.backend.service.MedicoService.actualizarFoto(..)) && args(username, foto)")
+    public Object auditarActualizacionFoto(ProceedingJoinPoint joinPoint,
+                                           String username,
+                                           MultipartFile foto) throws Throwable {
+        Medico previo = medicoRepository.findByUsuarioUsername(username).orElse(null);
+        String fotoAnterior = previo != null ? previo.getFotoUrl() : null;
+
+        Object resultado = joinPoint.proceed();
+
+        String fotoNueva = resultado instanceof PerfilMedicoResponse resp ? resp.fotoUrl() : null;
+        if (!Objects.equals(fotoAnterior, fotoNueva)) {
+            auditoriaService.registrarEvento(
+                    obtenerActorActual(username),
+                    "ACTUALIZAR",
+                    "Perfil médico",
+                    "fotoUrl",
+                    fotoAnterior,
+                    fotoNueva
+            );
+        }
         return resultado;
     }
 
@@ -156,6 +189,60 @@ public class AuditoriaAspect {
                     creado.nombre()
             );
         }
+    }
+
+    /**
+     * Intercepta la edicion de consultorios fisicos del medico (D-03).
+     */
+    @Around("execution(* pe.edu.uni.backend.service.MedicoService.actualizarCentro(..)) && args(username, centroId, request)")
+    public Object auditarActualizacionCentro(ProceedingJoinPoint joinPoint,
+                                             String username,
+                                             Integer centroId,
+                                             CentroAtencionRequest request) throws Throwable {
+        CentroAtencion previo = centroAtencionRepository.findById(centroId).orElse(null);
+        String resumenAnterior = previo != null
+                ? previo.getNombre() + " | " + previo.getDireccion() + " | " + previo.getCiudad()
+                : null;
+
+        Object resultado = joinPoint.proceed();
+
+        if (resultado instanceof CentroAtencionResponse actualizado) {
+            String resumenNuevo = actualizado.nombre() + " | " + actualizado.direccion() + " | " + actualizado.ciudad();
+            if (!Objects.equals(resumenAnterior, resumenNuevo)) {
+                auditoriaService.registrarEvento(
+                        obtenerActorActual(username),
+                        "ACTUALIZAR",
+                        "CentroAtencion",
+                        "datos",
+                        resumenAnterior,
+                        resumenNuevo
+                );
+            }
+        }
+        return resultado;
+    }
+
+    /**
+     * Intercepta la eliminacion de consultorios fisicos del medico (D-03).
+     */
+    @Around("execution(* pe.edu.uni.backend.service.MedicoService.eliminarCentro(..)) && args(username, centroId)")
+    public Object auditarEliminacionCentro(ProceedingJoinPoint joinPoint,
+                                           String username,
+                                           Integer centroId) throws Throwable {
+        CentroAtencion previo = centroAtencionRepository.findById(centroId).orElse(null);
+        String nombreAnterior = previo != null ? previo.getNombre() : null;
+
+        Object resultado = joinPoint.proceed();
+
+        auditoriaService.registrarEvento(
+                obtenerActorActual(username),
+                "ELIMINAR",
+                "CentroAtencion",
+                "nombre",
+                nombreAnterior,
+                null
+        );
+        return resultado;
     }
 
     private String obtenerActorActual(String respaldo) {

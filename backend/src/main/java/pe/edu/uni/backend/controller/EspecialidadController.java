@@ -1,5 +1,6 @@
 package pe.edu.uni.backend.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,6 +14,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/especialidades")
+@Tag(name = "Catálogo Público", description = "Listado público de especialidades habilitadas")
 public class EspecialidadController {
 
     private final EspecialidadService especialidadService;
