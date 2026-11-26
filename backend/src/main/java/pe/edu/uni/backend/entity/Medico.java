@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Perfil profesional del medico (US-MED-02..05).
+ * Perfil profesional del medico (US-MED-02..05 y moderacion US-ADM-02).
  * Relaciones: 1:1 con Usuario, 1:N con CentroAtencion y N:M con Especialidad.
  */
 @Entity
@@ -23,12 +23,22 @@ public class Medico {
     @JoinColumn(name = "usuario_id", nullable = false, unique = true)
     private Usuario usuario;
 
+    @Column(length = 100)
+    private String nombres;
+
+    @Column(length = 100)
+    private String apellidos;
+
     @Column(nullable = false, unique = true, length = 20)
     private String colegiatura;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "estado_colegiatura", nullable = false, length = 30)
     private EstadoColegiatura estadoColegiatura = EstadoColegiatura.PENDIENTE_VERIFICACION;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_perfil", length = 30)
+    private EstadoPerfilMedico estadoPerfil = EstadoPerfilMedico.PENDIENTE_REVISION;
 
     @Column(length = 2000)
     private String biografia;
@@ -53,10 +63,18 @@ public class Medico {
     public void setId(Integer id) { this.id = id; }
     public Usuario getUsuario() { return usuario; }
     public void setUsuario(Usuario usuario) { this.usuario = usuario; }
+    public String getNombres() { return nombres; }
+    public void setNombres(String nombres) { this.nombres = nombres; }
+    public String getApellidos() { return apellidos; }
+    public void setApellidos(String apellidos) { this.apellidos = apellidos; }
     public String getColegiatura() { return colegiatura; }
     public void setColegiatura(String colegiatura) { this.colegiatura = colegiatura; }
     public EstadoColegiatura getEstadoColegiatura() { return estadoColegiatura; }
     public void setEstadoColegiatura(EstadoColegiatura estadoColegiatura) { this.estadoColegiatura = estadoColegiatura; }
+    public EstadoPerfilMedico getEstadoPerfil() {
+        return estadoPerfil != null ? estadoPerfil : EstadoPerfilMedico.PENDIENTE_REVISION;
+    }
+    public void setEstadoPerfil(EstadoPerfilMedico estadoPerfil) { this.estadoPerfil = estadoPerfil; }
     public String getBiografia() { return biografia; }
     public void setBiografia(String biografia) { this.biografia = biografia; }
     public Integer getAniosExperiencia() { return aniosExperiencia; }

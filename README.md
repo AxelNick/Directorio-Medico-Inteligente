@@ -17,8 +17,8 @@ Empodera a los profesionales de la salud brindándoles herramientas de autogesti
 
 | Capa / Módulo | Tecnología / Herramienta | Descripción |
 | :--- | :--- | :--- |
-| **Lenguaje Backend** | Java 21 LTS | Código robusto, moderno y mantenible. |
-| **Framework Backend** | Spring Boot 3.x | Desarrollo de la API RESTful. |
+| **Lenguaje Backend** | Java 25 LTS | Código robusto, moderno y mantenible. |
+| **Framework Backend** | Spring Boot 4.1.1 | Desarrollo de la API RESTful. |
 | **Capa Transversal** | Spring AOP + AspectJ | Logging centralizado, auditoría de modificaciones y medición de rendimiento. |
 | **Seguridad** | Spring Security + JWT | Autenticación basada en tokens y control de acceso por roles (RBAC). |
 | **Base de Datos** | PostgreSQL 15+ | Persistencia relacional de datos. |
@@ -64,7 +64,7 @@ sistema-citas-medicas/
 │   ├── wbs-taiga.md            # Estructura de Desglose de Trabajo (WBS) y Backlog
 │   ├── sprints-planning.md     # Cronograma de Sprints y guía de commits
 │   └── ARQUITECTURA.md         # Documentación técnica de arquitectura y AOP
-├── backend/                    # Proyecto Spring Boot (Java 21)
+├── backend/                    # Proyecto Spring Boot (Java 25)
 └── frontend/                   # Proyecto React + TypeScript (Tailwind CSS)
 ```
 
@@ -79,7 +79,7 @@ docker compose up --build
 ```
 
 * Frontend: http://localhost:5173
-* API: http://localhost:8080 (Swagger UI en http://localhost:8080/swagger-ui.html)
+* API: http://localhost:8080 (Swagger UI en http://localhost:8080/swagger-ui/index.html)
 * PostgreSQL: `localhost:5433` (usuario `usuario_medico`, contraseña `password123`)
 
 La primera construcción descarga Maven y npm, así que tarda varios minutos. Para detener todo: `docker compose down` (agrega `-v` para borrar también la base de datos y las fotos).
@@ -89,7 +89,7 @@ Para desarrollar con recarga en caliente, levanta solo la base de datos (`docker
 ## Requisitos Previos e Instalación
 
 ### Prerrequisitos
-* **Java 21 LTS** o superior.
+* **Java 25 LTS** o superior.
 * **Node.js v20+** y npm.
 * **Docker Desktop** y Docker Compose.
 * **Git**.
@@ -118,7 +118,7 @@ Para desarrollar con recarga en caliente, levanta solo la base de datos (`docker
    ./mvnw spring-boot:run
    ```
    * La API estará disponible en: http://localhost:8080
-   * Swagger UI estará disponible en: http://localhost:8080/swagger-ui.html
+   * Swagger UI estará disponible en: http://localhost:8080/swagger-ui/index.html
 
 5. **Ejecutar el Frontend (React + TypeScript):**
    ```bash

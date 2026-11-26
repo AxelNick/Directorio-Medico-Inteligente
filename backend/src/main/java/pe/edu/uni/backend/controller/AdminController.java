@@ -1,5 +1,8 @@
 package pe.edu.uni.backend.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +23,8 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/admin")
+@Tag(name = "Administración Base", description = "Auditoría AOP y catálogo de especialidades (ROLE_ADMIN)")
+@SecurityRequirement(name = "bearerAuth")
 public class AdminController {
 
     private final AuditoriaService auditoriaService;

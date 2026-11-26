@@ -1,12 +1,16 @@
 package pe.edu.uni.backend.exception;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.Map;
@@ -17,6 +21,8 @@ import java.util.Map;
  */
 @RestControllerAdvice
 public class ManejadorGlobalExcepciones {
+
+    private static final Logger log = LoggerFactory.getLogger(ManejadorGlobalExcepciones.class);
 
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<Map<String, String>> negocio(ApiException ex) {
@@ -32,6 +38,16 @@ public class ManejadorGlobalExcepciones {
         return cuerpo(HttpStatus.BAD_REQUEST, mensaje);
     }
 
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, String>> tipoInvalido(MethodArgumentTypeMismatchException ex) {
+        return cuerpo(HttpStatus.BAD_REQUEST, "Parametro invalido: " + ex.getName());
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<Map<String, String>> parametroFaltante(MissingServletRequestParameterException ex) {
+        return cuerpo(HttpStatus.BAD_REQUEST, "Falta el parametro requerido: " + ex.getParameterName());
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, String>> cuerpoIlegible(HttpMessageNotReadableException ex) {
         return cuerpo(HttpStatus.BAD_REQUEST, "El cuerpo de la solicitud no es valido");
@@ -45,6 +61,12 @@ public class ManejadorGlobalExcepciones {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, String>> integridad(DataIntegrityViolationException ex) {
         return cuerpo(HttpStatus.CONFLICT, "El registro entra en conflicto con datos existentes");
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, String>> inesperado(Exception ex) {
+        log.error("Error inesperado en API REST: {}", ex.getClass().getSimpleName());
+        return cuerpo(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrio un error interno en el servidor");
     }
 
     private ResponseEntity<Map<String, String>> cuerpo(HttpStatus status, String mensaje) {

@@ -1,5 +1,7 @@
 package pe.edu.uni.backend.controller;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -30,6 +32,8 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/medicos/me")
+@Tag(name = "Autogestión Médica", description = "Perfil profesional, fotografía y centros de atención del médico autenticado (ROLE_MEDICO)")
+@SecurityRequirement(name = "bearerAuth")
 public class MedicoController {
 
     private final MedicoService medicoService;
