@@ -50,8 +50,12 @@ function copyFor(change: Change): Copy {
   }
 }
 
+/** El backend puede entregar nombres y apellidos vacíos mientras el registro no los pida. */
+const doctorName = (doctor: AdminDoctor) => `${doctor.nombres ?? ''} ${doctor.apellidos ?? ''}`.trim()
+const NO_NAME = 'Sin nombre registrado'
+
 const columns: ModerationColumn<AdminDoctor>[] = [
-  { id: 'medico', header: 'Médico', cell: (doctor) => `${doctor.nombres} ${doctor.apellidos}` },
+  { id: 'medico', header: 'Médico', cell: (doctor) => doctorName(doctor) || <span className="font-semibold italic text-[#78909a]">{NO_NAME}</span> },
   { id: 'cmp', header: 'CMP', cell: (doctor) => <span className="whitespace-nowrap">{doctor.colegiatura}</span> },
   { id: 'colegiatura', header: 'Colegiatura', cell: (doctor) => <StatusBadge tone={LICENSE[doctor.estadoColegiatura].tone}>{LICENSE[doctor.estadoColegiatura].label}</StatusBadge> },
   {
@@ -153,7 +157,7 @@ export function ModeracionMedicosPage() {
       busy={busy} error={dialogError} onConfirm={() => void confirm()} onCancel={() => setChange(null)}>
       {change && copy && <>
         <p>{copy.body}</p>
-        <p className="mt-2"><strong className="text-[#173454]">{change.doctor.nombres} {change.doctor.apellidos}</strong> · {change.doctor.colegiatura}</p>
+        <p className="mt-2"><strong className="text-[#173454]">{doctorName(change.doctor) || NO_NAME}</strong> · CMP {change.doctor.colegiatura}</p>
       </>}
     </ConfirmActionDialog>
   </AdminSection>
