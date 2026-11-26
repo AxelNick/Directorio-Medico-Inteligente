@@ -14,7 +14,7 @@ Fecha de ejecución: 2026-11-25. Código probado: `main` en `afc9e3c`.
 
 ### Límites de esta ejecución
 
-- **No se probó contra PostgreSQL.** La máquina no tiene Docker. El arranque desde una base PostgreSQL vacía queda pendiente (ver R-01).
+- **La ejecución original no usó PostgreSQL**, porque la máquina no tenía Docker. El 2026-11-26 se instaló Docker y se levantó `docker compose up --build` sobre `main` en `5225a7f`; con eso se ejecutó R-01 y un recorrido de humo contra PostgreSQL 15. Los demás casos no se repitieron uno por uno contra PostgreSQL.
 - Las pruebas de API se hicieron con `curl` contra el backend; las de interfaz, en el navegador contra el frontend en modo API.
 
 ## Resultados
@@ -25,7 +25,7 @@ Estado: ✅ pasa · ❌ falla · ⚠️ pasa con observación · ⏳ pendiente.
 
 | ID | Caso | Resultado esperado | Resultado obtenido | Estado |
 |---|---|---|---|---|
-| R-01 | Arranque desde BD vacía en PostgreSQL (sin Flyway, en `chore/quitar-flyway`) | Hibernate crea las tablas y `DatosIniciales` carga los datos base | No ejecutado: sin PostgreSQL disponible | ⏳ |
+| R-01 | Arranque desde BD vacía en PostgreSQL 15 con `docker compose` (sin Flyway) | Hibernate crea las tablas y `DatosIniciales` carga los datos base | Las 8 tablas y los 2 índices se crearon; se cargaron los 3 roles, el administrador de desarrollo y las 5 especialidades; el backend arrancó sin errores. Registro, perfil, centros, catálogo, moderación y auditoría respondieron a través del frontend en contenedor | ✅ |
 | R-02 | Arranque con el perfil `local` tal como está en el repositorio | Backend utilizable para pruebas | En `main`: arranca sin roles ni administrador; registro y login fallan (D-01). Repetido en `chore/quitar-flyway`: catálogo cargado, registro, login de admin, perfil, centros y auditoría responden bien | ❌ en `main` · ✅ en `chore/quitar-flyway` |
 | R-03 | Arranque con el perfil `local` más datos iniciales cargados a mano (solo `main`) | Backend utilizable | Arranca y responde; catálogo con 5 especialidades | ✅ |
 
@@ -129,5 +129,4 @@ El detalle de lo probado está en `docs/matriz-aceptacion-sprints-3-5.md`.
 
 ## Pendiente
 
-- Ejecutar R-01 en una máquina con PostgreSQL (Docker o instalación nativa en el puerto 5433).
 - Registrar D-06 como incidencia en Taiga. D-01 a D-05 están resueltos.
