@@ -107,7 +107,7 @@ Estado: ✅ pasa · ❌ falla · ⚠️ pasa con observación · ⏳ pendiente.
 
 ## Defectos y observaciones
 
-> **Seguimiento (2026-11-26, `main` en `df0213a`):** tras el PR 17 se repitieron los casos fallidos. D-02, D-03 y D-04 quedan corregidos: sin token responde 401 con mensaje, la auditoría registra crear, editar y eliminar centros, y el preflight de `PATCH` responde 200. Aparece un defecto nuevo, D-06.
+> **Seguimiento (2026-11-26, `main` en `df0213a`):** tras el PR 17 se repitieron los casos fallidos. D-02, D-03 y D-04 quedan corregidos: sin token responde 401 con mensaje, la auditoría registra crear, editar y eliminar centros, y el preflight de `PATCH` responde 200. Apareció un defecto nuevo, D-06, que ya está corregido y comprobado contra PostgreSQL en Docker.
 
 | ID | Severidad | Descripción | Cómo reproducir | Responsable sugerido |
 |---|---|---|---|---|
@@ -116,7 +116,7 @@ Estado: ✅ pasa · ❌ falla · ⚠️ pasa con observación · ⏳ pendiente.
 | D-03 | Baja | La auditoría registra la creación de un centro de atención, pero no su edición ni su eliminación. | Crear, editar y borrar un centro; consultar `/admin/auditoria` | Integrante 3 (cobertura AOP) |
 | D-04 | Alta para Sprints 3 y 5 | CORS no permite `PATCH`. Los endpoints de moderación (`PATCH /api/v1/admin/...`) fallarán desde el navegador cuando frontend y backend estén en orígenes distintos. | Preflight `OPTIONS` con `Access-Control-Request-Method: PATCH` | Integrante 3 |
 | D-05 | Baja | La migración V3 no corre en H2 (error "tipo de dato desconocido", probablemente por `TIMESTAMPTZ`), por lo que no se puede activar Flyway en el perfil `local`. No afecta a PostgreSQL. | Arrancar el perfil `local` con `spring.flyway.enabled=true` | Ya no aplica: Flyway se retiró en `chore/quitar-flyway` |
-| D-06 | Media | Una ruta que no existe responde 500 "Ocurrio un error interno en el servidor" en vez de 404. Afecta a cualquier endpoint aún no implementado, por ejemplo `/api/v1/medicos/me/reputacion`. | `GET /api/v1/no-existe` con un token válido | Integrante 3 |
+| D-06 | Media | Una ruta que no existe responde 500 "Ocurrio un error interno en el servidor" en vez de 404. Afecta a cualquier endpoint aún no implementado, por ejemplo `/api/v1/medicos/me/reputacion`. | `GET /api/v1/no-existe` con un token válido | Corregido por el Integrante 4: ahora responde 404, y 405 si el método no está permitido |
 
 ## Estado de los Sprints 3 a 5 en `main`
 
@@ -129,4 +129,4 @@ El detalle de lo probado está en `docs/matriz-aceptacion-sprints-3-5.md`.
 
 ## Pendiente
 
-- Registrar D-06 como incidencia en Taiga. D-01 a D-05 están resueltos.
+- Ninguno: los defectos D-01 a D-06 están resueltos. Falta reflejarlo en Taiga.

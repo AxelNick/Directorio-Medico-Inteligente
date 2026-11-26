@@ -6,12 +6,14 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.Map;
 
@@ -61,6 +63,18 @@ public class ManejadorGlobalExcepciones {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, String>> integridad(DataIntegrityViolationException ex) {
         return cuerpo(HttpStatus.CONFLICT, "El registro entra en conflicto con datos existentes");
+    }
+
+    /** Ruta sin controlador: es un 404 del cliente, no un fallo interno del servidor. */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Map<String, String>> rutaInexistente(NoResourceFoundException ex) {
+        return cuerpo(HttpStatus.NOT_FOUND, "El recurso solicitado no existe");
+    }
+
+    /** La ruta existe, pero no admite el metodo HTTP usado. */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<Map<String, String>> metodoNoPermitido(HttpRequestMethodNotSupportedException ex) {
+        return cuerpo(HttpStatus.METHOD_NOT_ALLOWED, "Metodo HTTP no permitido para este recurso");
     }
 
     @ExceptionHandler(Exception.class)

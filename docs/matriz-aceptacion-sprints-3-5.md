@@ -84,7 +84,7 @@ Estado: ✅ pasa · ❌ falla · ⏳ pendiente · — no aplica en ese modo.
 |---|---|---|---|---|---|
 | D-01 | Rutas y métodos del contrato | Comparar las llamadas del cliente con el mapa de endpoints | Recursos en plural, sin verbos; GET, POST y PATCH coherentes | ✅ auto | ⏳ rutas administrativas ✅; faltan directorio, triage y reseñas |
 | D-02 | JWT en cada solicitud protegida | Revisar las cabeceras de las llamadas administrativas | `Authorization: Bearer`; el token nunca va en la URL | ✅ auto | ✅ en las rutas administrativas |
-| D-03 | Códigos de estado consistentes | Provocar 400, 401, 403, 404 y 409 | Cada uno con cuerpo JSON y `mensaje` | — | ❌ una ruta inexistente responde 500 en vez de 404 (D-06); 400, 401, 403, 404 y 409 de moderación ✅ |
+| D-03 | Códigos de estado consistentes | Provocar 400, 401, 403, 404 y 409 | Cada uno con cuerpo JSON y `mensaje` | — | ✅ 400, 401, 403, 404, 405 y 409 con `mensaje`; D-06 corregido |
 | D-04 | Swagger UI disponible | Abrir `/swagger-ui/index.html` y `/v3/api-docs` | Cargan y documentan controladores, DTO y respuestas | — | ✅ cargan; las rutas de Sprints 1 y 2 solo documentan la respuesta 200 |
 | D-05 | Swagger Authorize | Probar con JWT válido, sin token y con rol incorrecto | Éxito, 401 y 403 respectivamente | — | ⏳ la API responde 200, 401 y 403 según el caso; falta repetirlo desde el botón Authorize |
 | D-06 | Admin protegido con Swagger público | Llamar a una operación `/admin/**` sin autorizar | Se rechaza aunque la documentación sea pública | — | ✅ 401 sin token con la documentación pública |
@@ -109,5 +109,4 @@ U-02 se comprobó antes del PR 17, cuando el backend respondía 403 a esas rutas
 2. Confirmar el JSON de reputación y ajustar `api.ts` si difiere del provisional.
 3. Ejecutar los casos de "API real" que siguen pendientes con `npm run dev:api` y guardar las evidencias.
 4. Que el registro de médico guarde nombres y apellidos: hoy llegan vacíos y el panel muestra "Sin nombre registrado".
-5. Corregir el defecto D-06 (ruta inexistente responde 500).
-6. Actualizar el estado de cada historia en Taiga.
+5. Actualizar el estado de cada historia en Taiga.
