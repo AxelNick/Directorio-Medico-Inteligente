@@ -107,6 +107,8 @@ Estado: ✅ pasa · ❌ falla · ⚠️ pasa con observación · ⏳ pendiente.
 
 ## Defectos y observaciones
 
+> **Seguimiento (2026-11-26, `main` en `df0213a`):** tras el PR 17 se repitieron los casos fallidos. D-02, D-03 y D-04 quedan corregidos: sin token responde 401 con mensaje, la auditoría registra crear, editar y eliminar centros, y el preflight de `PATCH` responde 200. Aparece un defecto nuevo, D-06.
+
 | ID | Severidad | Descripción | Cómo reproducir | Responsable sugerido |
 |---|---|---|---|---|
 | D-01 | Media | El perfil `local` no deja el backend utilizable: desactiva Flyway y no carga roles ni administrador. Registrar devuelve error ("No existe el rol ROLE_MEDICO") y el admin de ejemplo no puede entrar. | `mvnw spring-boot:run -Dspring-boot.run.profiles=local` y luego `POST /auth/register` | Resuelto en `chore/quitar-flyway` (pendiente de fusionar) |
@@ -114,18 +116,18 @@ Estado: ✅ pasa · ❌ falla · ⚠️ pasa con observación · ⏳ pendiente.
 | D-03 | Baja | La auditoría registra la creación de un centro de atención, pero no su edición ni su eliminación. | Crear, editar y borrar un centro; consultar `/admin/auditoria` | Integrante 3 (cobertura AOP) |
 | D-04 | Alta para Sprints 3 y 5 | CORS no permite `PATCH`. Los endpoints de moderación (`PATCH /api/v1/admin/...`) fallarán desde el navegador cuando frontend y backend estén en orígenes distintos. | Preflight `OPTIONS` con `Access-Control-Request-Method: PATCH` | Integrante 3 |
 | D-05 | Baja | La migración V3 no corre en H2 (error "tipo de dato desconocido", probablemente por `TIMESTAMPTZ`), por lo que no se puede activar Flyway en el perfil `local`. No afecta a PostgreSQL. | Arrancar el perfil `local` con `spring.flyway.enabled=true` | Ya no aplica: Flyway se retiró en `chore/quitar-flyway` |
+| D-06 | Media | Una ruta que no existe responde 500 "Ocurrio un error interno en el servidor" en vez de 404. Afecta a cualquier endpoint aún no implementado, por ejemplo `/api/v1/medicos/me/reputacion`. | `GET /api/v1/no-existe` con un token válido | Integrante 3 |
 
 ## Estado de los Sprints 3 a 5 en `main`
 
-Solo como referencia para el carry-over; no forma parte de esta regresión. Ninguno de estos recursos existe todavía en el backend (todos responden 403 por la regla de seguridad por defecto):
+Solo como referencia para el carry-over; no forma parte de esta regresión. Situación al 2026-11-26 (`df0213a`):
 
-- `GET /api/v1/directorio/medicos`, `GET /api/v1/medicos/{id}/resenas`
-- `POST /api/v1/triages`
-- `GET /api/v1/admin/medicos`, `GET /api/v1/admin/resenas`, `GET /api/v1/medicos/me/reputacion`
-- `/swagger-ui/index.html`, `/v3/api-docs`
+- **Ya existen** (PR 17): `GET /api/v1/admin/medicos`, `PATCH` de estado de perfil y de colegiatura, `GET /api/v1/admin/usuarios`, `PATCH` de estado de cuenta, `GET` y `PATCH` de `/api/v1/admin/resenas`, `/swagger-ui/index.html` y `/v3/api-docs`.
+- **Todavía no existen:** `GET /api/v1/directorio/medicos`, `POST /api/v1/triages`, `POST` y `GET /api/v1/medicos/{id}/resenas` y `GET /api/v1/medicos/me/reputacion`.
+
+El detalle de lo probado está en `docs/matriz-aceptacion-sprints-3-5.md`.
 
 ## Pendiente
 
-- Fusionar `chore/quitar-flyway` y ejecutar R-01 en una máquina con PostgreSQL (Docker o instalación nativa en el puerto 5433).
-- Repetir R-17 y R-44 cuando el Integrante 3 corrija D-02 y D-04.
-- Registrar D-02, D-03 y D-04 como incidencias en Taiga; D-01 y D-05 se cierran al fusionar `chore/quitar-flyway`.
+- Ejecutar R-01 en una máquina con PostgreSQL (Docker o instalación nativa en el puerto 5433).
+- Registrar D-06 como incidencia en Taiga. D-01 a D-05 están resueltos.

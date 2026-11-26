@@ -1,7 +1,7 @@
 # Matriz de aceptación de los Sprints 3 a 5
 
 Responsable: Integrante 4 (frontend administrativo, integración y QA).
-Última actualización: 2026-11-25. Código de referencia: `main` en `4d1551b`.
+Última actualización: 2026-11-26. Código de referencia: `main` en `df0213a` (incluye el backend administrativo del PR 17).
 
 ## Cómo leer esta matriz
 
@@ -16,8 +16,9 @@ Estado: ✅ pasa · ❌ falla · ⏳ pendiente · — no aplica en ese modo.
 
 ### Situación actual
 
-- **Ningún caso está aceptado todavía con API real.** Los endpoints de directorio, moderación, triage, reseñas, reputación y Swagger no existen aún en `main`.
-- Las formas de los JSON de administración y reputación son provisionales; si el backend las define distinto, hay que ajustar el cliente y repetir los casos afectados.
+- **Moderación administrativa y Swagger ya están en `main`** (PR 17 del Integrante 3). Los casos que dependen solo de eso se ejecutaron con API real el 2026-11-26, contra el backend con el perfil `local` (H2).
+- **Siguen sin existir** el directorio público, `POST /api/v1/triages`, crear y listar reseñas, y la reputación del médico (Integrante 1). Todos los casos que dependen de ellos siguen pendientes.
+- Los JSON de administración quedaron confirmados en `docs/api-contracts.md` y coinciden con el cliente. Los de reputación siguen siendo provisionales.
 - Los datos de prueba deben ser ficticios. Las evidencias no deben incluir JWT, claves, correos reales ni texto de síntomas.
 
 ## Sprint 3: directorio y moderación administrativa
@@ -31,16 +32,16 @@ Estado: ✅ pasa · ❌ falla · ⏳ pendiente · — no aplica en ese modo.
 | A-05 | Ficha sin datos privados | Abrir la ficha de un médico | No muestra correo ni datos de la cuenta, ni acciones de edición | ✅ auto | ⏳ |
 | A-06 | Perfil pendiente no es público | Abrir la ficha de un médico pendiente de revisión | 404; tampoco aparece en el listado | ✅ auto | ⏳ |
 | A-07 | Aprobado sin CMP verificado | Aprobar un perfil con colegiatura pendiente y abrir su ficha | Sigue sin publicarse | ✅ auto | ⏳ |
-| A-08 | Admin aprueba y verifica | En `/admin/medicos`, aprobar un pendiente y verificar su CMP; luego buscarlo en `/directorio` | El médico pasa a aparecer en el directorio | ✅ auto, nav | ⏳ |
-| A-09 | Admin suspende | Suspender un médico publicado y buscarlo en `/directorio` | Deja de aparecer en el directorio | ✅ auto | ⏳ |
-| A-10 | Transición repetida | Aprobar un perfil que ya está aprobado | 409 con mensaje claro | ✅ auto | ⏳ |
-| A-11 | Moderación solo para admin | Llamar al listado de moderación como médico o paciente | 403 | ✅ auto | ⏳ |
-| A-12 | Bloquear una cuenta | En `/admin/usuarios`, bloquear una cuenta e intentar iniciar sesión con ella | La tabla la muestra bloqueada y el login se rechaza | ✅ auto, nav | ⏳ |
-| A-13 | Bloqueo invalida la sesión | Con un JWT emitido antes del bloqueo, hacer una solicitud protegida | Se rechaza; el filtro comprueba `Usuario.habilitado` | ✅ auto | ⏳ |
-| A-14 | Sin auto-bloqueo | Como admin, intentar bloquear la cuenta propia | La interfaz no ofrece el botón y el backend responde 409 | ✅ auto, nav | ⏳ |
-| A-15 | Listado sin contraseñas | Revisar la respuesta de `GET /api/v1/admin/usuarios` | No incluye contraseña ni hash | ✅ auto | ⏳ |
-| A-16 | Moderación auditada | Moderar un perfil, un CMP y una cuenta; abrir `/admin/auditoria` | Un evento por cambio con actor, objetivo, estado anterior y nuevo | — | ⏳ |
-| A-17 | CORS con PATCH | Preflight `OPTIONS` con `Access-Control-Request-Method: PATCH` desde el origen del frontend | 200 | — | ❌ (defecto D-04 de la regresión) |
+| A-08 | Admin aprueba y verifica | En `/admin/medicos`, aprobar un pendiente y verificar su CMP; luego buscarlo en `/directorio` | El médico pasa a aparecer en el directorio | ✅ auto, nav | ⏳ la moderación funciona (nav); falta el directorio para ver la publicación |
+| A-09 | Admin suspende | Suspender un médico publicado y buscarlo en `/directorio` | Deja de aparecer en el directorio | ✅ auto | ⏳ la suspensión funciona; falta el directorio para ver que deja de publicarse |
+| A-10 | Transición repetida | Aprobar un perfil que ya está aprobado | 409 con mensaje claro | ✅ auto | ✅ |
+| A-11 | Moderación solo para admin | Llamar al listado de moderación como médico o paciente | 403 | ✅ auto | ✅ 403 con otro rol y 401 sin token |
+| A-12 | Bloquear una cuenta | En `/admin/usuarios`, bloquear una cuenta e intentar iniciar sesión con ella | La tabla la muestra bloqueada y el login se rechaza | ✅ auto, nav | ✅ el login de la cuenta bloqueada se rechaza (401) |
+| A-13 | Bloqueo invalida la sesión | Con un JWT emitido antes del bloqueo, hacer una solicitud protegida | Se rechaza; el filtro comprueba `Usuario.habilitado` | ✅ auto | ✅ 401 con el JWT previo; vuelve a servir al habilitar |
+| A-14 | Sin auto-bloqueo | Como admin, intentar bloquear la cuenta propia | La interfaz no ofrece el botón y el backend responde 409 | ✅ auto, nav | ✅ 409 en el backend; la interfaz muestra "Tu cuenta" (nav) |
+| A-15 | Listado sin contraseñas | Revisar la respuesta de `GET /api/v1/admin/usuarios` | No incluye contraseña ni hash | ✅ auto | ✅ solo id, username, rol y habilitado |
+| A-16 | Moderación auditada | Moderar un perfil, un CMP y una cuenta; abrir `/admin/auditoria` | Un evento por cambio con actor, objetivo, estado anterior y nuevo | — | ✅ perfil, CMP y cuenta, con actor y estado anterior y nuevo (nav) |
+| A-17 | CORS con PATCH | Preflight `OPTIONS` con `Access-Control-Request-Method: PATCH` desde el origen del frontend | 200 | — | ✅ corregido en el PR 17 |
 
 ## Sprint 4: asistente, triage y fallback
 
@@ -69,10 +70,10 @@ Estado: ✅ pasa · ❌ falla · ⏳ pendiente · — no aplica en ese modo.
 | C-07 | Filtro por calificación mínima | En `/directorio`, filtrar por promedio mínimo 4 | Solo aparecen médicos con promedio de 4 o más | ✅ auto | ⏳ |
 | C-08 | Médico ve su reputación | Como médico, abrir `/medico/reputacion` | Promedio general, número de reseñas y comentarios paginados | ✅ auto, nav | ⏳ |
 | C-09 | Reputación de solo lectura | Revisar la pantalla y llamar al endpoint como paciente | Sin controles de edición; 403 para otros roles | ✅ auto, nav | ⏳ |
-| C-10 | Admin lista pendientes | En `/admin/resenas`, filtro "Pendientes" | Muestra las reseñas pendientes con médico, puntuación, comentario y fecha | ✅ auto, nav | ⏳ |
+| C-10 | Admin lista pendientes | En `/admin/resenas`, filtro "Pendientes" | Muestra las reseñas pendientes con médico, puntuación, comentario y fecha | ✅ auto, nav | ⏳ el listado responde, pero aún no hay reseñas que mostrar |
 | C-11 | Admin oculta una reseña | Ocultar una reseña visible y abrir la ficha del médico | Deja de listarse y el promedio se recalcula | ✅ auto, nav | ⏳ |
 | C-12 | Admin vuelve a publicar | Publicar una reseña oculta | Vuelve a listarse y a contar en el promedio | ✅ auto | ⏳ |
-| C-13 | Errores de moderación | Estado no permitido, reseña inexistente y estado repetido | 400, 404 y 409 respectivamente | ✅ auto | ⏳ |
+| C-13 | Errores de moderación | Estado no permitido, reseña inexistente y estado repetido | 400, 404 y 409 respectivamente | ✅ auto | ⏳ 400 y 404 ✅; el 409 necesita una reseña existente |
 | C-14 | Moderación sin correos | Revisar la respuesta de `GET /api/v1/admin/resenas` | No expone correos de pacientes | ✅ auto | ⏳ |
 | C-15 | Observer | Crear, aprobar y ocultar una reseña; revisar pruebas del backend | El evento activa la actualización de reputación y la invalidación de caché | — | ⏳ |
 | C-16 | Moderación de reseñas auditada | Ocultar una reseña y abrir `/admin/auditoria` | Queda registrado quién cambió la visibilidad y cuándo | — | ⏳ |
@@ -81,14 +82,14 @@ Estado: ✅ pasa · ❌ falla · ⏳ pendiente · — no aplica en ese modo.
 
 | ID | Caso | Pasos | Resultado esperado | Demo | API real |
 |---|---|---|---|---|---|
-| D-01 | Rutas y métodos del contrato | Comparar las llamadas del cliente con el mapa de endpoints | Recursos en plural, sin verbos; GET, POST y PATCH coherentes | ✅ auto | ⏳ |
-| D-02 | JWT en cada solicitud protegida | Revisar las cabeceras de las llamadas administrativas | `Authorization: Bearer`; el token nunca va en la URL | ✅ auto | ⏳ |
-| D-03 | Códigos de estado consistentes | Provocar 400, 401, 403, 404 y 409 | Cada uno con cuerpo JSON y `mensaje` | — | ⏳ (hoy falla 401, defecto D-02 de la regresión) |
-| D-04 | Swagger UI disponible | Abrir `/swagger-ui/index.html` y `/v3/api-docs` | Cargan y documentan controladores, DTO y respuestas | — | ⏳ |
-| D-05 | Swagger Authorize | Probar con JWT válido, sin token y con rol incorrecto | Éxito, 401 y 403 respectivamente | — | ⏳ |
-| D-06 | Admin protegido con Swagger público | Llamar a una operación `/admin/**` sin autorizar | Se rechaza aunque la documentación sea pública | — | ⏳ |
-| D-07 | Caché en GET públicos | Revisar cabeceras del directorio y de respuestas privadas | `Cache-Control` o `ETag` en lo público; sin caché en lo privado | — | ⏳ |
-| D-08 | DTO sin datos internos | Revisar las respuestas JSON | No se serializan entidades JPA ni campos privados del usuario | — | ⏳ |
+| D-01 | Rutas y métodos del contrato | Comparar las llamadas del cliente con el mapa de endpoints | Recursos en plural, sin verbos; GET, POST y PATCH coherentes | ✅ auto | ⏳ rutas administrativas ✅; faltan directorio, triage y reseñas |
+| D-02 | JWT en cada solicitud protegida | Revisar las cabeceras de las llamadas administrativas | `Authorization: Bearer`; el token nunca va en la URL | ✅ auto | ✅ en las rutas administrativas |
+| D-03 | Códigos de estado consistentes | Provocar 400, 401, 403, 404 y 409 | Cada uno con cuerpo JSON y `mensaje` | — | ❌ una ruta inexistente responde 500 en vez de 404 (D-06); 400, 401, 403, 404 y 409 de moderación ✅ |
+| D-04 | Swagger UI disponible | Abrir `/swagger-ui/index.html` y `/v3/api-docs` | Cargan y documentan controladores, DTO y respuestas | — | ✅ cargan; las rutas de Sprints 1 y 2 solo documentan la respuesta 200 |
+| D-05 | Swagger Authorize | Probar con JWT válido, sin token y con rol incorrecto | Éxito, 401 y 403 respectivamente | — | ⏳ la API responde 200, 401 y 403 según el caso; falta repetirlo desde el botón Authorize |
+| D-06 | Admin protegido con Swagger público | Llamar a una operación `/admin/**` sin autorizar | Se rechaza aunque la documentación sea pública | — | ✅ 401 sin token con la documentación pública |
+| D-07 | Caché en GET públicos | Revisar cabeceras del directorio y de respuestas privadas | `Cache-Control` o `ETag` en lo público; sin caché en lo privado | — | ⏳ lo privado va sin caché ✅; los GET públicos tampoco usan caché todavía |
+| D-08 | DTO sin datos internos | Revisar las respuestas JSON | No se serializan entidades JPA ni campos privados del usuario | — | ⏳ DTO administrativos ✅; faltan los públicos |
 
 ## Revisiones de interfaz de los paneles administrativos
 
@@ -100,11 +101,13 @@ Comprobadas a mano en el navegador el 2026-11-25. No sustituyen a los casos de a
 | U-02 | Estado de error de médicos, usuarios y reseñas | Modo API real contra el backend actual, que aún no tiene esos endpoints | ✅ Cada página muestra el aviso de error con el mensaje del servidor y el botón "Reintentar" |
 | U-03 | Vista móvil de la reputación del médico | No revisada | ⏳ |
 
-En U-02 el mensaje que se ve es "No tienes permiso para realizar esta acción", porque hoy el backend responde 403 a cualquier ruta que no existe (defecto D-02 de la regresión).
+U-02 se comprobó antes del PR 17, cuando el backend respondía 403 a esas rutas. Desde el PR 17 los tres paneles cargan datos reales.
 
 ## Qué falta para cerrar
 
-1. Que existan en `main` los endpoints de los Integrantes 1 y 3, con CORS permitiendo `PATCH`.
-2. Confirmar las formas de los JSON y ajustar `api.ts` si difieren de las provisionales.
-3. Ejecutar la columna "API real" completa con `npm run dev:api` y guardar las evidencias.
-4. Actualizar el estado de cada historia en Taiga y registrar los defectos que aparezcan.
+1. Que existan en `main` los endpoints del Integrante 1: directorio, triage, reseñas y reputación.
+2. Confirmar el JSON de reputación y ajustar `api.ts` si difiere del provisional.
+3. Ejecutar los casos de "API real" que siguen pendientes con `npm run dev:api` y guardar las evidencias.
+4. Que el registro de médico guarde nombres y apellidos: hoy llegan vacíos y el panel muestra "Sin nombre registrado".
+5. Corregir el defecto D-06 (ruta inexistente responde 500).
+6. Actualizar el estado de cada historia en Taiga.
