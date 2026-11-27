@@ -21,5 +21,8 @@ public record ActualizarPerfilRequest(
         @Pattern(regexp = "^[A-Za-z0-9-]{4,20}$", message = "La colegiatura debe tener entre 4 y 20 caracteres alfanumericos")
         String colegiatura,
 
-        List<Integer> especialidadIds
+        List<Integer> especialidadIds,
+
+        @Size(max = 100) String nombres,
+        @Size(max = 100) String apellidos
 ) {}

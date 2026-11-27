@@ -12,6 +12,7 @@ import java.util.Set;
  * Relaciones: 1:1 con Usuario, 1:N con CentroAtencion y N:M con Especialidad.
  */
 @Entity
+@org.hibernate.annotations.DynamicUpdate
 @Table(name = "medicos")
 public class Medico {
 
@@ -50,6 +51,7 @@ public class Medico {
     private String fotoUrl;
 
     @ManyToMany(fetch = FetchType.LAZY)
+    @org.hibernate.annotations.BatchSize(size = 64)
     @JoinTable(
             name = "medico_especialidad",
             joinColumns = @JoinColumn(name = "medico_id"),
@@ -57,6 +59,7 @@ public class Medico {
     private Set<Especialidad> especialidades = new HashSet<>();
 
     @OneToMany(mappedBy = "medico", cascade = CascadeType.ALL, orphanRemoval = true)
+    @org.hibernate.annotations.BatchSize(size = 64)
     private List<CentroAtencion> centros = new ArrayList<>();
 
     public Integer getId() { return id; }

@@ -13,6 +13,7 @@ import java.time.OffsetDateTime;
 @Entity
 @Table(
         name = "resenas",
+        indexes = @Index(name = "ix_resenas_medico_visibilidad", columnList = "medico_id, estado_visibilidad"),
         uniqueConstraints = @UniqueConstraint(
                 name = "uk_resena_paciente_medico",
                 columnNames = {"paciente_id", "medico_id"}

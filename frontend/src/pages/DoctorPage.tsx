@@ -41,6 +41,7 @@ export function DoctorPage() {
     setBusy(true); setError(''); setNotice('')
     try {
       const saved = await service.updateProfile(token, {
+        nombres: profile.nombres?.trim() ?? '', apellidos: profile.apellidos?.trim() ?? '',
         biografia: profile.biografia.trim(), aniosExperiencia: profile.aniosExperiencia,
         colegiatura: profile.colegiatura.trim(), especialidadIds: profile.especialidadIds,
       })
@@ -80,7 +81,7 @@ export function DoctorPage() {
 
   const active = specialties.filter((item) => item.habilitada)
   return <AppShell eyebrow="ÁREA MÉDICA · SPRINT 2" title="Tu perfil profesional">
-    <p className="mb-7 max-w-2xl text-sm leading-7 text-[#607785]">Administra la información que presentarás a los pacientes cuando el directorio público esté disponible. Tu colegiatura requiere verificación administrativa.</p>
+    <p className="mb-7 max-w-2xl text-sm leading-7 text-[#607785]">Administra la información que presentarás a los pacientes en el directorio público. Tu colegiatura requiere verificación administrativa.</p>
     <p className="mb-6"><Link to="/medico/reputacion" className="text-sm font-bold text-[#0F8B8D] underline underline-offset-4">Ver mi reputación y las opiniones de pacientes</Link></p>
     {loading && <Notice>Cargando perfil, especialidades y centros…</Notice>}
     {error && <div className="mb-5"><Notice tone="error">{error}</Notice></div>}
@@ -91,8 +92,14 @@ export function DoctorPage() {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3"><h2 id="perfil-title" className="text-xl font-bold">Carta de presentación</h2><span className="rounded-full bg-[#eaf7f6] px-3 py-2 text-xs font-bold text-[#0F8B8D]">{profile.estadoColegiatura.replaceAll('_', ' ')}</span></div>
         <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl bg-[#f2f8f8] p-4">{profile.fotoUrl ? <img src={backendAssetUrl(profile.fotoUrl)} alt="Fotografía de perfil" className="h-20 w-20 rounded-xl object-cover" /> : <span className="flex h-20 w-20 items-center justify-center rounded-xl bg-[#dceeed] text-xs font-bold text-[#54717a]">Sin foto</span>}<div><label htmlFor="photo" className="block text-sm font-bold">Fotografía de perfil</label><p className="mt-1 text-xs text-[#6c8490]">JPG, PNG o WebP · máximo 1 MB</p><input id="photo" type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} className="mt-2 max-w-full text-xs file:mr-3 file:rounded-full file:border-0 file:bg-[#1E3A5F] file:px-3 file:py-2 file:font-bold file:text-white" onChange={(event) => { void savePhoto(event.target.files?.[0]); event.target.value = '' }} /></div></div>
         <form className="space-y-5" onSubmit={saveProfile}>
-          <div><label htmlFor="bio" className="mb-2 block text-sm font-bold">Biografía</label><textarea id="bio" className={`${fieldClass} min-h-36`} value={profile.biografia} onChange={(event) => setProfile({ ...profile, biografia: event.target.value })} maxLength={1500} /><p className="mt-1 text-right text-xs text-[#78909a]">{profile.biografia.length}/1500</p></div>
-          <div className="grid gap-5 sm:grid-cols-2"><div><label htmlFor="years" className="mb-2 block text-sm font-bold">Años de experiencia</label><input id="years" type="number" min="0" max="80" className={fieldClass} value={profile.aniosExperiencia ?? ''} onChange={(event) => setProfile({ ...profile, aniosExperiencia: event.target.value === '' ? null : Number(event.target.value) })} /></div><div><label htmlFor="license" className="mb-2 block text-sm font-bold">Colegiatura</label><input id="license" className={fieldClass} value={profile.colegiatura} onChange={(event) => setProfile({ ...profile, colegiatura: event.target.value })} required maxLength={40} /></div></div>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div><label htmlFor="profile-nombres" className="mb-2 block text-sm font-bold">Nombres</label>
+              <input id="profile-nombres" className={fieldClass} value={profile.nombres ?? ''} onChange={(event) => setProfile({ ...profile, nombres: event.target.value })} autoComplete="given-name" required maxLength={100} /></div>
+            <div><label htmlFor="profile-apellidos" className="mb-2 block text-sm font-bold">Apellidos</label>
+              <input id="profile-apellidos" className={fieldClass} value={profile.apellidos ?? ''} onChange={(event) => setProfile({ ...profile, apellidos: event.target.value })} autoComplete="family-name" required maxLength={100} /></div>
+          </div>
+          <div><label htmlFor="bio" className="mb-2 block text-sm font-bold">Biografía</label><textarea id="bio" className={`${fieldClass} min-h-36`} value={profile.biografia} onChange={(event) => setProfile({ ...profile, biografia: event.target.value })} maxLength={2000} /><p className="mt-1 text-right text-xs text-[#78909a]">{profile.biografia.length}/2000</p></div>
+          <div className="grid gap-5 sm:grid-cols-2"><div><label htmlFor="years" className="mb-2 block text-sm font-bold">Años de experiencia</label><input id="years" type="number" min="0" max="70" className={fieldClass} value={profile.aniosExperiencia ?? ''} onChange={(event) => setProfile({ ...profile, aniosExperiencia: event.target.value === '' ? null : Number(event.target.value) })} /></div><div><label htmlFor="license" className="mb-2 block text-sm font-bold">Colegiatura</label><input id="license" className={fieldClass} value={profile.colegiatura} onChange={(event) => setProfile({ ...profile, colegiatura: event.target.value })} required maxLength={20} /></div></div>
           <div><p className="mb-2 text-sm font-bold">Especialidades activas</p>{active.length === 0 ? <p className="text-sm text-[#708591]">El catálogo aún no tiene especialidades disponibles.</p> : <div className="grid gap-3 sm:grid-cols-2">{active.map((item) => <label key={item.id} className="flex items-start gap-3 rounded-xl border border-[#dce9e9] p-3 text-sm"><input type="checkbox" className="mt-1 accent-[#0F8B8D]" checked={profile.especialidadIds.includes(item.id)} onChange={(event) => setProfile({ ...profile, especialidadIds: event.target.checked ? [...profile.especialidadIds, item.id] : profile.especialidadIds.filter((id) => id !== item.id) })} /><span>{item.nombre}</span></label>)}</div>}</div>
           <button type="submit" className={primaryClass} disabled={busy}>Guardar perfil</button>
         </form>

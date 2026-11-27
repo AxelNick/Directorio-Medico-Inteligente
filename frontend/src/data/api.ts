@@ -9,6 +9,8 @@ export interface Session {
 }
 
 export interface MedicalProfile {
+  nombres: string | null
+  apellidos: string | null
   biografia: string
   aniosExperiencia: number | null
   fotoUrl: string | null
@@ -195,9 +197,9 @@ export const api = {
     }
     return identity
   },
-  async register(username: string, password: string, colegiatura: string) {
+  async register(username: string, password: string, colegiatura: string, nombres: string, apellidos: string) {
     const result = await request<{ id?: number; username?: string; estadoColegiatura?: string }>(
-      '/auth/register', { method: 'POST', body: json({ username, password, colegiatura }) },
+      '/auth/register', { method: 'POST', body: json({ username, password, colegiatura, nombres, apellidos }) },
     )
     if (!result.id || result.username !== username || result.estadoColegiatura !== 'PENDIENTE_VERIFICACION') {
       throw new ApiError(502, 'El backend aún no confirma registros persistidos. No se creó una cuenta verificable.')
@@ -213,7 +215,7 @@ export const api = {
     }
   },
   getProfile: (token: string) => request<MedicalProfile>('/medicos/me/perfil', {}, token),
-  updateProfile: (token: string, value: Pick<MedicalProfile, 'biografia' | 'aniosExperiencia' | 'colegiatura' | 'especialidadIds'>) =>
+  updateProfile: (token: string, value: Omit<MedicalProfile, 'fotoUrl' | 'estadoColegiatura'>) =>
     request<MedicalProfile>('/medicos/me/perfil', { method: 'PUT', body: json(value) }, token),
   uploadPhoto: (token: string, file: File) => {
     const body = new FormData()

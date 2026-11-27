@@ -13,7 +13,9 @@ public record PerfilMedicoResponse(
         String fotoUrl,
         String colegiatura,
         EstadoColegiatura estadoColegiatura,
-        List<Integer> especialidadIds
+        List<Integer> especialidadIds,
+        String nombres,
+        String apellidos
 ) {
     public static PerfilMedicoResponse desde(Medico medico) {
         List<Integer> ids = medico.getEspecialidades().stream()
@@ -26,6 +28,6 @@ public record PerfilMedicoResponse(
                 medico.getFotoUrl(),
                 medico.getColegiatura(),
                 medico.getEstadoColegiatura(),
-                ids);
+                ids, medico.getNombres(), medico.getApellidos());
     }
 }

@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Configuration;
         info = @Info(
                 title = "Directorio Médico Inteligente API",
                 version = "v1",
-                description = "API RESTful del Directorio Médico Inteligente (autenticación JWT, autogestión, catálogo, moderación administrativa y auditoría)."
+                description = "Directorio público, triage, reseñas, autenticación JWT, autogestión, catálogo, moderación y auditoría."
         )
 )
 @SecurityScheme(

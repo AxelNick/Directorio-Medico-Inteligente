@@ -5,6 +5,7 @@ services:
     plan: free
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
+    healthCheckPath: /salud
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
@@ -17,4 +18,10 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: APP_CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: APP_UPLOADS_SUPABASE_URL
+        sync: false
+      - key: APP_UPLOADS_SUPABASE_BUCKET
+        value: fotos-medicos
+      - key: APP_UPLOADS_SUPABASE_KEY
         sync: false

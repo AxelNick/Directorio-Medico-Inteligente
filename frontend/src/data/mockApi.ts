@@ -37,6 +37,8 @@ function initialStore(): DemoStore {
         biografia: 'Perfil ficticio para revisar la presentación profesional.',
         aniosExperiencia: 5,
         fotoUrl: null,
+        nombres: 'Ana María',
+        apellidos: 'Quispe Rojas',
         colegiatura: 'CMP-DEMO-001',
         estadoColegiatura: 'PENDIENTE_VERIFICACION',
         especialidadIds: [1],
@@ -221,7 +223,7 @@ export const mockApi = {
     if (blockedUsers.has(username)) throw new ApiError(403, 'Esta cuenta está bloqueada. Contacta a un administrador.')
     return { token: `demo:${role}:${encodeURIComponent(username)}`, username, rol: role }
   },
-  async register(username: string, password: string, colegiatura: string) {
+  async register(username: string, password: string, colegiatura: string, nombres: string, apellidos: string) {
     await pause()
     const s = store()
     if (!username || !colegiatura || password.length < 8) throw new ApiError(400, 'Completa los datos de registro.')
@@ -229,7 +231,7 @@ export const mockApi = {
     if (Object.values(s.profiles).some((item) => item.colegiatura.toLowerCase() === colegiatura.toLowerCase())) throw new ApiError(409, 'Esa colegiatura ya existe en los datos de prueba.')
     // La contraseña de una cuenta creada aquí solo vive en memoria; nunca se guarda en localStorage.
     registered.set(username, { password, colegiatura, rol: 'ROLE_MEDICO' })
-    s.profiles[username] = { biografia: '', aniosExperiencia: null, fotoUrl: null, colegiatura, estadoColegiatura: 'PENDIENTE_VERIFICACION', especialidadIds: [] }
+    s.profiles[username] = { nombres, apellidos, biografia: '', aniosExperiencia: null, fotoUrl: null, colegiatura, estadoColegiatura: 'PENDIENTE_VERIFICACION', especialidadIds: [] }
     s.centers[username] = []
     s.nextUserId += 1
     save()
@@ -244,7 +246,7 @@ export const mockApi = {
     registered.set(username, { password, rol: 'ROLE_PACIENTE' })
   },
   async getProfile(token: string) { await pause(); return copy(profileFor(token)) },
-  async updateProfile(token: string, value: Pick<MedicalProfile, 'biografia' | 'aniosExperiencia' | 'colegiatura' | 'especialidadIds'>) {
+  async updateProfile(token: string, value: Omit<MedicalProfile, 'fotoUrl' | 'estadoColegiatura'>) {
     await pause()
     const username = userFromToken(token, 'ROLE_MEDICO')
     const s = store()

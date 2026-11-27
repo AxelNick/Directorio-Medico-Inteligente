@@ -1,5 +1,9 @@
 package pe.edu.uni.backend.service;
 
+import org.springframework.context.ApplicationEventPublisher;
+import pe.edu.uni.backend.event.DirectorioMedicoCambiadoEvent;
+import java.text.Normalizer;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,6 +55,7 @@ public class MedicoService {
     private final EspecialidadRepository especialidadRepository;
     private final PasswordEncoder passwordEncoder;
     private final AlmacenamientoFotoService almacenamientoFoto;
+    private final ApplicationEventPublisher eventos;
 
     public MedicoService(MedicoRepository medicoRepository,
                          UsuarioRepository usuarioRepository,
@@ -58,7 +63,7 @@ public class MedicoService {
                          CentroAtencionRepository centroRepository,
                          EspecialidadRepository especialidadRepository,
                          PasswordEncoder passwordEncoder,
-                         AlmacenamientoFotoService almacenamientoFoto) {
+                         AlmacenamientoFotoService almacenamientoFoto, ApplicationEventPublisher eventos) {
         this.medicoRepository = medicoRepository;
         this.usuarioRepository = usuarioRepository;
         this.rolRepository = rolRepository;
@@ -66,6 +71,7 @@ public class MedicoService {
         this.especialidadRepository = especialidadRepository;
         this.passwordEncoder = passwordEncoder;
         this.almacenamientoFoto = almacenamientoFoto;
+        this.eventos = eventos;
     }
 
     // ---------- US-MED-03: registro con colegiatura PENDIENTE_VERIFICACION ----------
@@ -96,6 +102,8 @@ public class MedicoService {
         Medico medico = new Medico();
         medico.setUsuario(usuario);
         medico.setColegiatura(colegiatura);
+        medico.setNombres(normalizarIdentidad(request.nombres()));
+        medico.setApellidos(normalizarIdentidad(request.apellidos()));
         medico.setEstadoColegiatura(EstadoColegiatura.PENDIENTE_VERIFICACION);
 
         usuarioRepository.save(usuario);
@@ -113,20 +121,29 @@ public class MedicoService {
     public PerfilMedicoResponse actualizarPerfil(String username, ActualizarPerfilRequest request) {
         Medico medico = medicoDe(username);
 
+        if (request.nombres() != null || request.apellidos() != null) {
+            medico.setNombres(normalizarIdentidad(request.nombres()));
+            medico.setApellidos(normalizarIdentidad(request.apellidos()));
+        }
         medico.setBiografia(request.biografia() == null ? null : request.biografia().trim());
         medico.setAniosExperiencia(request.aniosExperiencia());
         aplicarColegiatura(medico, request.colegiatura());
         medico.setEspecialidades(resolverEspecialidades(medico, request.especialidadIds()));
 
-        return PerfilMedicoResponse.desde(medicoRepository.save(medico));
+        var guardado = medicoRepository.save(medico);
+        cambios(guardado.getId());
+        return PerfilMedicoResponse.desde(guardado);
     }
 
     public PerfilMedicoResponse actualizarFoto(String username, MultipartFile foto) {
-        Medico medico = medicoDe(username);
+        Medico medico = medicoRepository.bloquearParaActualizarFoto(username)
+                .orElseThrow(() -> new RecursoNoEncontradoException("No existe un perfil medico para la sesion actual"));
         String anterior = medico.getFotoUrl();
-        medico.setFotoUrl(almacenamientoFoto.guardar(medico.getId(), foto));
+        var nueva = almacenamientoFoto.guardar(medico.getId(), foto);
+        almacenamientoFoto.limpiarTrasGuardar(anterior, nueva);
+        medico.setFotoUrl(nueva);
         Medico guardado = medicoRepository.save(medico);
-        almacenamientoFoto.eliminar(anterior);
+        cambios(guardado.getId());
         return PerfilMedicoResponse.desde(guardado);
     }
 
@@ -187,17 +204,23 @@ public class MedicoService {
         CentroAtencion centro = new CentroAtencion();
         centro.setMedico(medico);
         copiar(request, centro);
-        return CentroAtencionResponse.desde(centroRepository.save(centro));
+        var guardado = centroRepository.save(centro);
+        cambios(medico.getId());
+        return CentroAtencionResponse.desde(guardado);
     }
 
     public CentroAtencionResponse actualizarCentro(String username, Integer centroId, CentroAtencionRequest request) {
         CentroAtencion centro = centroDe(username, centroId);
         copiar(request, centro);
-        return CentroAtencionResponse.desde(centroRepository.save(centro));
+        var guardado = centroRepository.save(centro);
+        cambios(centro.getMedico().getId());
+        return CentroAtencionResponse.desde(guardado);
     }
 
     public void eliminarCentro(String username, Integer centroId) {
-        centroRepository.delete(centroDe(username, centroId));
+        var centro = centroDe(username, centroId);
+        centroRepository.delete(centro);
+        cambios(centro.getMedico().getId());
     }
 
     private void copiar(CentroAtencionRequest request, CentroAtencion centro) {
@@ -223,5 +246,16 @@ public class MedicoService {
 
     private static String normalizarColegiatura(String colegiatura) {
         return colegiatura.trim().toUpperCase();
+    }
+
+    private static String normalizarIdentidad(String valor) {
+        if (valor == null || valor.isBlank() || valor.contains("@")) {
+            throw new ValidacionException("Indica nombres y apellidos, sin correo electrónico");
+        }
+        return Normalizer.normalize(valor.strip().replaceAll("\\s+", " "), Normalizer.Form.NFC);
+    }
+
+    private void cambios(Integer id) {
+        eventos.publishEvent(new DirectorioMedicoCambiadoEvent(id));
     }
 }

@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: password123
       POSTGRES_DB: directorio_medico
     ports:
-      - "5433:5432"
+      - "127.0.0.1:${DMI_DB_PORT:-5433}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -23,8 +23,9 @@ services:
       SPRING_DATASOURCE_USERNAME: usuario_medico
       SPRING_DATASOURCE_PASSWORD: password123
       APP_UPLOADS_DIR: /app/uploads
+      SPRING_JPA_SHOW_SQL: "false"
     ports:
-      - "8080:8080"
+      - "127.0.0.1:${DMI_API_PORT:-8080}:8080"
     volumes:
       - uploads:/app/uploads
     depends_on:
@@ -34,7 +35,7 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "5173:80"
+      - "127.0.0.1:${DMI_SPA_PORT:-5173}:80"
     depends_on:
       - backend
 

@@ -1,5 +1,8 @@
 package pe.edu.uni.backend.service;
 
+import org.springframework.context.ApplicationEventPublisher;
+import pe.edu.uni.backend.event.DirectorioMedicoCambiadoEvent;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.edu.uni.backend.dto.ActualizarEspecialidadRequest;
@@ -23,8 +26,11 @@ public class EspecialidadService {
 
     private final EspecialidadRepository especialidadRepository;
 
-    public EspecialidadService(EspecialidadRepository especialidadRepository) {
+    private final ApplicationEventPublisher eventos;
+
+    public EspecialidadService(EspecialidadRepository especialidadRepository, ApplicationEventPublisher eventos) {
         this.especialidadRepository = especialidadRepository;
+        this.eventos = eventos;
     }
 
     @Transactional(readOnly = true)
@@ -58,7 +64,9 @@ public class EspecialidadService {
         especialidad.setNombre(nombre);
         // Borrado logico: cambiar habilitada a false mantiene las asignaciones existentes en medicos
         especialidad.setHabilitada(request.habilitada());
-        return especialidadRepository.save(especialidad);
+        var guardada = especialidadRepository.save(especialidad);
+        eventos.publishEvent(new DirectorioMedicoCambiadoEvent(null));
+        return guardada;
     }
 
     private String normalizar(String nombre) {
