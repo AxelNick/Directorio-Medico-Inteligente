@@ -34,7 +34,11 @@ docker inspect --format '{{json .HostConfig.PortBindings}}' "$(dc ps -q db)"
 for svc in backend frontend; do docker tag "dmi-integrante1-uni-$svc:latest" "dmi-integrante1-uni-$svc:$sha"; done
 ```
 
-Espera a que `/salud` responda antes de iniciar el cliente. La comprobación de `PortBindings` debe devolver un mapa vacío. En Windows, usa una sesión SSH con clave/credencial gestionada y el anfitrión ya validado:
+Espera a que `/salud` responda antes de iniciar el cliente. La comprobación de `PortBindings` debe devolver un mapa vacío.
+
+En este equipo puedes ejecutar [abrir-vps.bat](../../abrir-vps.bat). Usa PowerShell 7, Plink y la huella validada en PuTTY. Lee `VPS.md` desde la carpeta privada de conexiones y abre el directorio cuando el túnel responde. Pulsa Enter en la ventana del BAT para cerrar el túnel. Puedes usar `/verificar` para comprobar la conexión y cerrarla automáticamente sin abrir el navegador.
+
+Para abrir el túnel manualmente en Windows, usa la referencia privada con el anfitrión ya validado.
 
 ```text
 plink -ssh -N -L 127.0.0.1:25174:127.0.0.1:15173 -L 127.0.0.1:28082:127.0.0.1:38080 -P <puerto> <cuenta>@<host>

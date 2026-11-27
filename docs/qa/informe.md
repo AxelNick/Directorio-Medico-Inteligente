@@ -51,6 +51,8 @@ La imagen PNG ficticia usada por la prueba HTTP conservó el hash `273349097030a
 
 ## Repetición local
 
+En Windows, [probar-local.bat](../../probar-local.bat) automatiza el arranque, las pruebas y la comprobación de persistencia. Admite `/sin-pausa` para ejecutarse desde una terminal o un script.
+
 Desde la raíz del repositorio en PowerShell:
 
 ```powershell
