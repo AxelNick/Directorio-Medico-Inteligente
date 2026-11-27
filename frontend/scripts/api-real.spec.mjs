@@ -6,9 +6,10 @@ const adminCreds = {
   username: process.env.DMI_ADMIN_USER || 'admin@uni.edu.pe',
   password: process.env.DMI_ADMIN_PASS || 'admin123',
 }
-async function respondio(page, suffix, method, status) {
+async function respondio(page, suffix, method, status, query = () => true) {
   const response = await page.waitForResponse(candidate =>
-    new URL(candidate.url()).pathname.endsWith(suffix) && candidate.request().method() === method)
+    new URL(candidate.url()).pathname.endsWith(suffix) && candidate.request().method() === method
+      && query(new URL(candidate.url()).searchParams))
   expect(response.status(), `${method} ${suffix}`).toBe(status)
   return response
 }
@@ -120,7 +121,8 @@ test('SPA real, de aprobación y triage a reseña, reputación y moderación', a
     await page.getByLabel('Especialidad', { exact: true }).selectOption({ label: 'Cardiología' })
     await page.getByLabel('Ciudad').fill('lima')
     await page.getByLabel('Número de colegiatura').fill(cmp)
-    const buscar = respondio(page, '/api/v1/directorio/medicos', 'GET', 200)
+    const buscar = respondio(page, '/api/v1/directorio/medicos', 'GET', 200,
+      params => params.get('colegiatura') === cmp)
     await page.getByRole('button', { name: 'Aplicar filtros' }).click()
     const cruce = await buscar
     const urlBusqueda = new URL(cruce.url())

@@ -4,3 +4,5 @@ uploads
 mvnw
 mvnw.cmd
 *.log
+.env
+.env.*
