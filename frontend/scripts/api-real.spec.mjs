@@ -274,3 +274,55 @@ test('Swagger Authorize conserva los permisos administrativos', async ({ page, r
   await operacion.getByRole('button', { name: 'Execute' }).click()
   await autorizado
 })
+
+test('paneles de administración, roles y recuperación a 375 px', async ({ page, browser, baseURL, request }) => {
+  page.setDefaultTimeout(10_000)
+  await ingresar(page, adminCreds, '/admin')
+  await expect(page.getByText('Cardiología', { exact: true })).toBeVisible()
+  await page.setViewportSize({ width: 375, height: 820 })
+  const paneles = [
+    { ruta: '/admin/medicos', api: '/api/v1/admin/medicos', titulo: 'Moderación de médicos' },
+    { ruta: '/admin/usuarios', api: '/api/v1/admin/usuarios', titulo: 'Cuentas de usuario' },
+    { ruta: '/admin/resenas', api: '/api/v1/admin/resenas', titulo: 'Moderación de reseñas' },
+    { ruta: '/admin/auditoria', api: '/admin/auditoria', titulo: 'Registro de auditoría' },
+  ]
+  for (const { ruta, api, titulo } of paneles) {
+    const interceptar = url => url.pathname.endsWith(api) && url.searchParams.has('page')
+    const fallo = Promise.withResolvers()
+    await page.route(interceptar, async route => {
+      await fallo.promise
+      await route.abort()
+    })
+    await page.goto(ruta)
+    await expect(page.getByRole('heading', { name: titulo })).toBeVisible()
+    await expect(page.getByRole('status').filter({ hasText: /Cargando/ })).toBeVisible()
+    fallo.resolve()
+    const reintentar = page.getByRole('button', { name: 'Reintentar' })
+    await expect(reintentar).toBeVisible()
+    await page.unroute(interceptar)
+    const recuperado = respondio(page, api, 'GET', 200)
+    await reintentar.click()
+    await recuperado
+    await expect(reintentar).toHaveCount(0)
+    await sinDesborde(page)
+  }
+  await expect(page.getByRole('heading', { name: 'Eventos registrados' })).toBeVisible()
+
+  const sufijo = randomBytes(5).toString('hex')
+  const medico = { username: `regresion-${sufijo}@ensayo.invalid`, password: randomBytes(20).toString('hex') }
+  const alta = await request.post('/api/auth/register', {
+    data: { ...medico, nombres: 'Ana', apellidos: 'Ensayo', colegiatura: `R-${sufijo}` },
+  })
+  expect(alta.status()).toBe(201)
+  const otraSesion = await browser.newContext({ baseURL })
+  try {
+    const visita = await otraSesion.newPage()
+    await visita.goto('/admin/auditoria')
+    await expect(visita).toHaveURL(/\/ingresar$/)
+    await ingresar(visita, medico, '/medico')
+    await visita.goto('/admin/auditoria')
+    await expect(visita).toHaveURL(/\/medico$/)
+  } finally {
+    await otraSesion.close()
+  }
+})

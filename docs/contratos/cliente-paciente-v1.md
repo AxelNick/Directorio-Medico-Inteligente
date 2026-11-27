@@ -1,6 +1,6 @@
 # Contrato que consume el frontend del paciente (Integrante 2)
 
-**Estado:** propuesta del cliente. El frontend ya implementa estas llamadas en [`frontend/src/data/api.ts`](../../frontend/src/data/api.ts) y las prueba contra el adaptador de demostración; **ningún endpoint de esta página está confirmado en el backend**. Integrante 1 (directorio, triage, reseñas) e Integrante 3 (seguridad, OpenAPI) deben confirmar o ajustar nombres de campos y rutas; cualquier cambio se comunica antes de integrar y se refleja en un solo lugar (`api.ts`). Sigue las reglas REST del plan de correcciones del equipo (arquitectura RESTful transversal): recursos en plural, método HTTP como operación, DTO sin entidades JPA, errores `{ "mensaje": "..." }`.
+**Estado al 26/11/2026:** directorio, triage y reseñas implementados y consumidos por [`frontend/src/data/api.ts`](../../frontend/src/data/api.ts). El contrato firmado en código conserva los nombres que usa el Integrante 2. El [informe](../qa/informe.md) distingue pruebas HTTP, navegador, simulación y despliegue.
 
 ## Prefijo y rutas del navegador
 
@@ -18,7 +18,7 @@ Los endpoints anteriores (`/auth/**`, `/medicos/me/**`, `/especialidades`, `/adm
 `GET /api/v1/directorio/medicos?nombre=&especialidadId=&ciudad=&colegiatura=&calificacionMinima=&page=0&size=9&sort=`
 
 - Todos los filtros son opcionales y se combinan; la búsqueda y el promedio los calcula el backend. `page` es el índice desde 0. `calificacionMinima` es un número (3, 4, 4.5).
-- Solo devuelve perfiles `APROBADO` con colegiatura `VERIFICADA`. No enviar `Authorization`: son consultas GET públicas y cacheables.
+- Devuelve perfiles `APROBADO` con colegiatura `VERIFICADA` e identidad completa. La consulta es pública y usa revalidación HTTP.
 - `colegiatura` busca por número de CMP. El filtro «estado de colegiatura» del plan no se ofrece porque la API pública solo contiene verificadas.
 
 ```json
@@ -33,7 +33,7 @@ Los endpoints anteriores (`/auth/**`, `/medicos/me/**`, `/especialidades`, `/adm
 }
 ```
 
-`promedioCalificacion` y `totalResenas` son opcionales hasta Sprint 5 (con 0 reseñas, `promedioCalificacion` es `null`). `fotoUrl` admite `null`.
+`promedioCalificacion` y `totalResenas` se incluyen siempre en el backend integrado. Con cero reseñas visibles el promedio es `null`. `fotoUrl` admite `null`, rutas de la API y URL absolutas de objetos.
 
 `GET /api/v1/directorio/medicos/{medicoId}` → misma información más `biografia`, `aniosExperiencia` (admite `null`) y `centros: [{ id, nombre, direccion, ciudad }]`. `404` si el perfil no existe o no es público. Nunca incluye correo, usuario ni datos privados.
 
