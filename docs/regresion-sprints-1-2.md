@@ -127,6 +127,22 @@ Solo como referencia para el carry-over; no forma parte de esta regresión. Situ
 
 El detalle de lo probado está en `docs/matriz-aceptacion-sprints-3-5.md`.
 
-## Pendiente
+## Pendientes consignados en el corte histórico
 
 - Ninguno: los defectos D-01 a D-06 están resueltos. Falta reflejarlo en Taiga.
+
+## Corte del Integrante 1 · 26/11/2026
+
+Versión `106483311b5f8a629a18fbde516f0eea07ba7a76`, PostgreSQL 15.19 en Docker, JUnit con H2 y PostgreSQL, Chromium contra API real.
+
+| Casos | Resultado |
+| --- | --- |
+| R-01 y R-02 | Aprobados. PostgreSQL vacío, perfil H2 local y pruebas de evolución desde 4200fd0 y 5e1b763. |
+| R-04 a R-14 | Aprobados. Registro, validación, duplicado, tres roles, sesión inválida y restauración en SPA. |
+| R-15 a R-17 | Aprobados por HTTP y pruebas de seguridad en las rutas de autogestión y administración ejercitadas. |
+| R-20 a R-36 | Aprobados por HTTP y navegador según caso. Captura de identidad en alta y edición, JPG/PNG/WebP, centro propio y catálogo activo. |
+| R-18, R-19 y R-37 a R-41 | Aprobados por navegador y SQL saneado. La pantalla de auditoría restringe la ruta por rol. Admin ve el catálogo y los eventos reales. Se observaron `CREAR`, `ACTUALIZAR` y `ELIMINAR` de `CentroAtencion`, además de perfil y catálogo. |
+| R-42 a R-44 | Preflight PUT, DELETE y PATCH aprobadas para el origen permitido. Origen distinto rechazado. |
+| R-03 | Conservado como caso histórico del procedimiento anterior para H2. La versión integrada usa el arranque de R-02. |
+
+Se preservó la corrección del PR #20. El [informe](qa/informe.md) distingue las pruebas de este corte del historial del equipo.

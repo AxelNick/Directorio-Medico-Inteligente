@@ -6,10 +6,22 @@ Documento de referencia compartido para el desarrollo e integración frontend–
 
 - **Prefijo:** `/api/v1` para todos los endpoints nuevos (Sprints 3 a 5). Los endpoints de Sprints 1–2 (`/auth/**`, `/medicos/me/**`, `/especialidades`, `/admin/auditoria`, `/admin/especialidades`) conservan su ruta.
 - **Formato de error:** `{ "mensaje": "..." }`
-- **Códigos HTTP:** `200 OK`, `201 Created`, `204 No Content`, `400 Bad Request`, `401 Unauthorized`, `403 Forbidden`, `404 Not Found`, `409 Conflict`, `500 Internal Server Error`, `503/504` proveedor externo no disponible.
+- **Códigos HTTP:** `200`, `201`, `204`, `400`, `401`, `403`, `404`, `405`, `409`, `500`. El triage devuelve su fallback en `200`; `GET /salud` responde `503` si PostgreSQL no está disponible.
 - **Autenticación:** Stateless con `Authorization: Bearer <JWT>`. Las rutas `/api/v1/admin/**` y `/admin/**` exigen `ROLE_ADMIN`.
 
 ---
+
+## Identidad y fotos del médico — Sprint 2
+
+`POST /auth/register` recibe `username`, `password`, `colegiatura`, `nombres` y `apellidos`. Devuelve `201` con `id`, `username` y `estadoColegiatura`. Cada nombre y apellido admite hasta 100 caracteres. `PUT /medicos/me/perfil` acepta los dos campos de identidad juntos y preserva la identidad si ambos se omiten. `GET /medicos/me/perfil` los devuelve, con `null` en perfiles anteriores sin completar. La fotografía se sube con `PUT /medicos/me/foto`, parte multipart `foto`, JPG/PNG/WebP hasta 1 MiB. `fotoUrl` puede ser una ruta bajo `/uploads/fotos/` o una URL HTTPS de objetos.
+
+## Directorio público — Sprint 3
+
+`GET /api/v1/directorio/medicos?nombre=angela+pena&especialidadId=2&ciudad=lima&colegiatura=CMP&calificacionMinima=4&page=0&size=9&sort=id,desc`
+
+Los filtros son opcionales y acumulativos. Se exige identidad completa, perfil aprobado y CMP verificada. El nombre acepta términos parciales sin distinguir mayúsculas o tildes, la ciudad se compara completa y el CMP acepta coincidencia parcial. `size` admite 1 a 100, con `page` desde 0. `sort` acepta `apellidos`, `nombres`, `colegiatura` o `id`, más `,asc` o `,desc`. El orden predeterminado usa apellidos, nombres e ID. El filtro de reputación admite 1–5 y usa el promedio sin redondear de reseñas visibles.
+
+`GET /api/v1/directorio/medicos/{medicoId}` devuelve el resumen más biografía, años de experiencia y centros físicos, o `404` si no es publicable. La [especificación del cliente](contratos/cliente-paciente-v1.md) contiene los JSON de respuesta.
 
 ## Moderación administrativa — Sprint 3 (`ROLE_ADMIN`)
 
@@ -70,7 +82,7 @@ Reglas: impide el auto-bloqueo del administrador (`409`) y dejar el sistema sin 
 ## Triage operativo, emergencias y fallback — Sprint 4
 
 ### `POST /api/v1/triages`
-Cuerpo: `{ "mensaje": "texto de 1 a 1000 caracteres" }`
+Cuerpo de ejemplo `{ "mensaje": "Consulta ficticia de Cardiología" }`. Acepta de 1 a 1000 caracteres y exige texto con contenido. Ante validación inválida responde `400`.
 
 Respuesta `200 OK`:
 ```json
@@ -83,9 +95,19 @@ Respuesta `200 OK`:
 ```
 
 - Cuando `EmergencyDetectionService` detecta señal de riesgo: `emergencia: true`, `fallback: false`, `especialidad: null`, sin llamar al LLM.
-- Cuando `TriageFallbackService` actúa ante caída, timeout, HTTP `429` o `5xx`: `emergencia: false`, `fallback: true`, orientación hacia el directorio manual.
+- Ante desconexión, timeout, HTTP `429`, `5xx` o salida inválida, `TriageFallbackService` devuelve `emergencia: false`, `fallback: true` y orientación al directorio manual. Se usa el catálogo activo para validar cualquier especialidad propuesta.
 
 ---
+
+## Reseñas públicas y reputación — Sprint 5
+
+| Método y ruta | Rol | Respuesta |
+| --- | --- | --- |
+| `POST /api/v1/medicos/{medicoId}/resenas` | Paciente | Con `{"puntuacion":5,"comentario":"Atención ficticia"}`, devuelve `201` y la nueva reseña pendiente. `400` por cuerpo inválido, `401/403` por permisos, `404` por médico no publicable y `409` por duplicado. |
+| `GET /api/v1/medicos/{medicoId}/resenas?page=0&size=5` | Público | `200` con `items`, `page`, `size`, `total` y `promedio`. Solo visibles y ordenadas por fecha e ID descendentes. `404` si el médico no es publicable. |
+| `GET /api/v1/medicos/me/reputacion?page=0&size=5` | Médico | Mismo DTO paginado, para el médico del JWT. El promedio es nulo cuando el total vale cero. |
+
+Los GET públicos de directorio, ficha y reseñas usan `Cache-Control: no-cache, public` para exigir revalidación HTTP. El backend mantiene fichas y resúmenes por instancia. Las respuestas privadas usan `no-store`; reputación agrega `private`. El triage también usa `no-store`.
 
 ## Moderación de reseñas — Sprint 5 (`ROLE_ADMIN`)
 

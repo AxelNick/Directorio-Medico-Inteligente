@@ -24,7 +24,7 @@ export function DoctorCard({ doctor }: { doctor: DoctorSummary }) {
     {hasRatingData && <p className="mt-3 flex items-center gap-2 text-sm text-[#4b6573]">
       {doctor.promedioCalificacion != null && doctor.totalResenas
         ? <><StarRating value={doctor.promedioCalificacion} className="text-base" /><span>{formatRating(doctor.promedioCalificacion)} · {doctor.totalResenas} {doctor.totalResenas === 1 ? 'reseña' : 'reseñas'}</span></>
-        : <span className="text-[#78909a]">Sin reseñas todavía</span>}
+        : <span className="text-[#526a76]">Sin reseñas todavía</span>}
     </p>}
     {doctor.ciudades.length > 0 && <p className="mt-3 text-sm text-[#68808b]">{doctor.ciudades.join(' · ')}</p>}
     <Link to={`/directorio/medico/${doctor.id}`} className="mt-5 inline-flex w-fit items-center rounded-full border border-[#bcd6d8] px-5 py-2.5 text-sm font-bold text-[#1E3A5F] hover:bg-[#eaf7f6] focus-visible:outline-3 focus-visible:outline-[#0F8B8D]" aria-label={`Ver perfil de ${name}`}>Ver perfil</Link>

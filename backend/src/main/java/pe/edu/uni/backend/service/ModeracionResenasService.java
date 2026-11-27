@@ -1,6 +1,7 @@
 package pe.edu.uni.backend.service;
 
 import org.springframework.data.domain.Page;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -9,6 +10,7 @@ import pe.edu.uni.backend.dto.AdminResenaResponse;
 import pe.edu.uni.backend.dto.PaginaResponse;
 import pe.edu.uni.backend.entity.EstadoVisibilidadResena;
 import pe.edu.uni.backend.entity.Resena;
+import pe.edu.uni.backend.event.ResenaEstadoCambiadoEvent;
 import pe.edu.uni.backend.exception.ConflictoException;
 import pe.edu.uni.backend.exception.RecursoNoEncontradoException;
 import pe.edu.uni.backend.exception.ValidacionException;
@@ -26,10 +28,13 @@ public class ModeracionResenasService {
 
     private final ResenaRepository resenaRepository;
     private final AuditoriaService auditoriaService;
+    private final ApplicationEventPublisher eventos;
 
-    public ModeracionResenasService(ResenaRepository resenaRepository, AuditoriaService auditoriaService) {
+    public ModeracionResenasService(ResenaRepository resenaRepository, AuditoriaService auditoriaService,
+                                    ApplicationEventPublisher eventos) {
         this.resenaRepository = resenaRepository;
         this.auditoriaService = auditoriaService;
+        this.eventos = eventos;
     }
 
     @Transactional(readOnly = true)
@@ -70,6 +75,7 @@ public class ModeracionResenasService {
                 actual.name(),
                 nuevoEstado.name()
         );
+        eventos.publishEvent(new ResenaEstadoCambiadoEvent(guardada.getMedico().getId(), guardada.getId(), actual, nuevoEstado));
         return AdminResenaResponse.desde(guardada);
     }
 }

@@ -61,7 +61,7 @@ export function AsistenteChat() {
       <textarea id="chat-input" className={`${fieldClass} min-h-24`} value={input} maxLength={MAX_LENGTH} readOnly={sending}
         onChange={(event) => setInput(event.target.value)} onKeyDown={onKeyDown} aria-describedby="chat-help" />
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-        <p id="chat-help" className="text-xs text-[#78909a]">Enter para enviar · Shift+Enter para nueva línea · {input.length}/{MAX_LENGTH}</p>
+        <p id="chat-help" className="text-xs text-[#526a76]">Enter para enviar · Shift+Enter para nueva línea · {input.length}/{MAX_LENGTH}</p>
         <button type="submit" className={primaryClass} disabled={sending || input.trim() === ''}>{sending ? 'Enviando…' : 'Enviar'}</button>
       </div>
     </form>

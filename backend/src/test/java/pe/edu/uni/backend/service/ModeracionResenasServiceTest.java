@@ -39,7 +39,8 @@ class ModeracionResenasServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ModeracionResenasService(resenaRepository, auditoriaService);
+        service = new ModeracionResenasService(resenaRepository, auditoriaService,
+                org.mockito.Mockito.mock(org.springframework.context.ApplicationEventPublisher.class));
     }
 
     @Test

@@ -33,13 +33,13 @@ export function ReviewForm({ token, medicoId, onCreated }: { token: string; medi
     } finally { setBusy(false) }
   }
 
-  if (outcome === 'created') return <Notice tone="success">Gracias: tu reseña se registró correctamente.</Notice>
+  if (outcome === 'created') return <Notice tone="success">Tu reseña se registró y está pendiente de moderación.</Notice>
   if (outcome === 'duplicate') return <Notice>Ya calificaste a este médico. Solo se permite una reseña por paciente.</Notice>
   return <form className="space-y-4" onSubmit={submit} noValidate>
     <div><p id={`rating-label-${medicoId}`} className="mb-2 text-sm font-bold">Tu puntuación</p><StarRatingInput value={rating} onChange={setRating} disabled={busy} labelledBy={`rating-label-${medicoId}`} /></div>
     <div><label htmlFor={`review-comment-${medicoId}`} className="mb-2 block text-sm font-bold">Comentario (opcional)</label>
       <textarea id={`review-comment-${medicoId}`} className={`${fieldClass} min-h-28`} value={comment} maxLength={MAX_COMMENT} disabled={busy} onChange={(event) => setComment(event.target.value)} />
-      <p className="mt-1 text-right text-xs text-[#78909a]">{comment.length}/{MAX_COMMENT}</p></div>
+      <p className="mt-1 text-right text-xs text-[#526a76]">{comment.length}/{MAX_COMMENT}</p></div>
     {error && <Notice tone="error">{error}</Notice>}
     <button type="submit" className={primaryClass} disabled={busy}>{busy ? 'Enviando…' : 'Enviar opinión'}</button>
   </form>

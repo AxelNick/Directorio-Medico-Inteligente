@@ -37,7 +37,7 @@ class ModeracionMedicoServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ModeracionMedicoService(medicoRepository, auditoriaService);
+        service = new ModeracionMedicoService(medicoRepository, auditoriaService, org.mockito.Mockito.mock(org.springframework.context.ApplicationEventPublisher.class));
     }
 
     @Test

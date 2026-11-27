@@ -103,10 +103,27 @@ Comprobadas a mano en el navegador el 2026-11-25. No sustituyen a los casos de a
 
 U-02 se comprobó antes del PR 17, cuando el backend respondía 403 a esas rutas. Desde el PR 17 los tres paneles cargan datos reales.
 
-## Qué falta para cerrar
+## Qué faltaba en el corte histórico
 
 1. Que existan en `main` los endpoints del Integrante 1: directorio, triage, reseñas y reputación.
 2. Confirmar el JSON de reputación y ajustar `api.ts` si difiere del provisional.
 3. Ejecutar los casos de "API real" que siguen pendientes con `npm run dev:api` y guardar las evidencias.
 4. Que el registro de médico guarde nombres y apellidos: hoy llegan vacíos y el panel muestra "Sin nombre registrado".
 5. Actualizar el estado de cada historia en Taiga.
+
+## Corte del Integrante 1 · 26/11/2026
+
+Versión `106483311b5f8a629a18fbde516f0eea07ba7a76`. Docker Desktop y PostgreSQL 15.19, API real por nginx y, aparte, origen directo por Vite. Los estados superiores conservan el corte previo del Integrante 4.
+
+| Casos | Resultado y evidencia del corte |
+| --- | --- |
+| A-01 a A-09 | Aprobados con PostgreSQL. Filtros combinados y consultas paginadas, ficha sin cuenta, publicación tras las dos decisiones y suspensión con caché precalentada. Browser confirma alta, aprobación y búsqueda. |
+| A-10 a A-17 | Aprobados por HTTP y pruebas de seguridad. Conflictos, permiso de admin, bloqueo de JWT emitido, auditoría y preflight de PATCH. |
+| B-01 a B-04, B-06 a B-09 | Aprobados con navegador, HTTP y pruebas Java. Proveedor simulado en ejecución. Adaptador externo contra servidor HTTP local, sin llamada real a OpenAI. |
+| B-05 | Pendiente en API real. El componente conserva el enlace filtrado en el ensayo de demo histórico; la ejecución simulada actual verificó el enlace manual general. |
+| C-01 a C-16 | Aprobados. Una reseña pendiente con 201, duplicado concurrente con 409 y una fila física. Solo reseñas visibles. Republicación, auditoría, reputación y rollback verificados. |
+| D-01 a D-08 | Aprobados. Documentación Swagger abierta, 401/403/200 mediante Authorize, cabeceras públicas/privadas y regresión 404/405 del PR #20. |
+| U-03 | Aprobado en Chromium a 375 px. Reputación de API real, sin desbordamiento horizontal. |
+| U-01 y U-02 | Aprobados en un recorrido suplementario sobre el build integrado. Médicos, cuentas, reseñas y auditoría a 375 px, estado de carga, error inducido, reintento contra API real y ausencia de desbordamiento. |
+
+Aceptación local del corte **52 ejecutados de 53 planificados, 52 aprobados de 52 ejecutados**. La [evidencia reproducible](qa/informe.md) registra el alcance de cada prueba.

@@ -65,6 +65,9 @@ public class SecurityConfig {
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll() // OpenAPI / Swagger UI
                 .requestMatchers("/admin/**", "/api/v1/admin/**").hasRole("ADMIN") // Modulos administrativos
                 .requestMatchers("/medicos/me/**", "/api/v1/medicos/me/**").hasRole("MEDICO") // Autogestion: solo medicos
+                .requestMatchers("/api/v1/directorio/**", "/api/v1/triages", "/salud").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/medicos/{medicoId}/resenas").hasRole("PACIENTE")
+                .requestMatchers("/api/v1/medicos/{medicoId}/resenas").permitAll()
                 .anyRequest().authenticated() // Todo lo demas requiere token
             );
 

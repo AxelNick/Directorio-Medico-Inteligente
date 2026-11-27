@@ -1,5 +1,8 @@
 package pe.edu.uni.backend.service;
 
+import org.springframework.context.ApplicationEventPublisher;
+import pe.edu.uni.backend.event.DirectorioMedicoCambiadoEvent;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -36,10 +39,13 @@ public class ModeracionMedicoService {
 
     private final MedicoRepository medicoRepository;
     private final AuditoriaService auditoriaService;
+    private final ApplicationEventPublisher eventos;
 
-    public ModeracionMedicoService(MedicoRepository medicoRepository, AuditoriaService auditoriaService) {
+    public ModeracionMedicoService(MedicoRepository medicoRepository, AuditoriaService auditoriaService,
+                                   ApplicationEventPublisher eventos) {
         this.medicoRepository = medicoRepository;
         this.auditoriaService = auditoriaService;
+        this.eventos = eventos;
     }
 
     @Transactional(readOnly = true)
@@ -76,6 +82,7 @@ public class ModeracionMedicoService {
                 actual.name(),
                 nuevoEstado.name()
         );
+        eventos.publishEvent(new DirectorioMedicoCambiadoEvent(guardado.getId()));
         return AdminMedicoResponse.desde(guardado);
     }
 
@@ -98,6 +105,7 @@ public class ModeracionMedicoService {
                 actual.name(),
                 nuevoEstado.name()
         );
+        eventos.publishEvent(new DirectorioMedicoCambiadoEvent(guardado.getId()));
         return AdminMedicoResponse.desde(guardado);
     }
 

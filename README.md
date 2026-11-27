@@ -72,6 +72,8 @@ sistema-citas-medicas/
 
 Para desplegar PostgreSQL, backend y frontend en servicios separados, sigue [DEPLOYMENT.md](DEPLOYMENT.md).
 
+El [índice de sustentación](docs/qa/README.md) reúne la demo reproducible con API real, cobertura, persistencia, despliegue en la UNI y trazabilidad.
+
 Solo necesitas Docker y Docker Compose. Desde la raíz del repositorio:
 
 ```bash

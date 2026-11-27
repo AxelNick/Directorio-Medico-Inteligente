@@ -18,5 +18,13 @@ public record RegistroMedicoRequest(
 
         @NotBlank(message = "La colegiatura es obligatoria")
         @Pattern(regexp = "^[A-Za-z0-9-]{4,20}$", message = "La colegiatura debe tener entre 4 y 20 caracteres alfanumericos")
-        String colegiatura
+        String colegiatura,
+
+        @NotBlank(message = "Los nombres son obligatorios")
+        @Size(max = 100)
+        String nombres,
+
+        @NotBlank(message = "Los apellidos son obligatorios")
+        @Size(max = 100)
+        String apellidos
 ) {}

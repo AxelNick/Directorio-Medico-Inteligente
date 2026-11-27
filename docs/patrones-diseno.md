@@ -27,8 +27,45 @@ Revisión del código: 23 de octubre de 2026. Esta guía sirve para ubicar ejemp
 2. Señalar que [AuditoriaAspect.java](../backend/src/main/java/pe/edu/uni/backend/aspect/AuditoriaAspect.java) intercepta ese método y [AuditoriaService.java](../backend/src/main/java/pe/edu/uni/backend/service/AuditoriaService.java) persiste el evento. La consulta administrativa está en [AdminController.java](../backend/src/main/java/pe/edu/uni/backend/controller/AdminController.java).
 3. En frontend, abrir [service.ts](../frontend/src/data/service.ts) y [AuthPage.tsx](../frontend/src/pages/AuthPage.tsx) para mostrar cómo el mismo formulario usa un servicio de prueba o HTTP según el entorno.
 
+## Patrones implementados por el Integrante 1 (26/11/2026)
+
+**Adapter y Factory Method.** [TriageService](../backend/src/main/java/pe/edu/uni/backend/service/TriageService.java) depende de [TriageProvider](../backend/src/main/java/pe/edu/uni/backend/adapter/TriageProvider.java). El [OpenAiAdapter](../backend/src/main/java/pe/edu/uni/backend/adapter/OpenAiAdapter.java) prepara la solicitud de chat, lee el JSON de respuesta y traduce fallos a motivos operativos. [TriageProviderCreator](../backend/src/main/java/pe/edu/uni/backend/factory/TriageProviderCreator.java) declara `createProvider()`. [TriageConfig](../backend/src/main/java/pe/edu/uni/backend/config/TriageConfig.java) elige el creador concreto al arrancar con `APP_TRIAGE_PROVIDER=simulado|openai`.
+
+```mermaid
+classDiagram
+    TriageService --> TriageProvider
+    ExternalTriageCreator --|> TriageProviderCreator
+    MockTriageCreator --|> TriageProviderCreator
+    TriageProviderCreator ..> TriageProvider : createProvider
+    OpenAiAdapter ..|> TriageProvider
+    ExternalTriageCreator ..> OpenAiAdapter : construye
+    OpenAiAdapter --> OpenAI : JSON HTTP
+```
+
+**Observer.** [ResenaService](../backend/src/main/java/pe/edu/uni/backend/service/ResenaService.java) y [ModeracionResenasService](../backend/src/main/java/pe/edu/uni/backend/service/ModeracionResenasService.java) publican [ResenaEstadoCambiadoEvent](../backend/src/main/java/pe/edu/uni/backend/event/ResenaEstadoCambiadoEvent.java). La moderación mantiene el registro de auditoría. [ReputacionService](../backend/src/main/java/pe/edu/uni/backend/service/ReputacionService.java) caduca el resumen que usa la ficha y lo recalcula al siguiente GET. [CacheDirectorio](../backend/src/main/java/pe/edu/uni/backend/service/CacheDirectorio.java) invalida la ficha precalentada. Los listeners se ejecutan después del commit y en orden, primero reputación y luego ficha. Si hay rollback, los dos valores anteriores siguen disponibles. La misma caché recibe cambios de perfil, foto, centro, CMP y catálogo.
+
+```mermaid
+sequenceDiagram
+    actor Admin
+    participant S as ModeracionResenasService
+    participant DB as PostgreSQL
+    participant R as ReputacionService
+    participant C as CacheDirectorio
+    Admin->>S: PATCH estado
+    S->>DB: Actualizar estado y auditar
+    S->>S: Publicar ResenaEstadoCambiadoEvent
+    alt Commit confirmado
+        S->>R: Caducar resumen del médico
+        S->>C: Invalidar ficha
+    else Rollback
+        S-->>Admin: Conservar estado confirmado anterior
+    end
+```
+
+El listado y el filtro mínimo consultan PostgreSQL. Los GET públicos exigen revalidación HTTP para observar moderación desde navegador. Ambas cachés se mantienen por instancia con un máximo de 256 entradas. El despliegue de ensayo usa una instancia de API. El [informe](qa/informe.md) vincula el caso de rollback y la evidencia de caché precalentada.
+
 ## Límites del estado actual
 
 - El [registro de paciente](contratos/registro-paciente-v1.md) ya tiene controlador, servicio y repositorio en backend; el formulario frontend sigue usando datos ficticios por defecto en desarrollo y HTTP al seleccionar la API. El alta no crea historia clínica ni permisos médicos.
-- No se han identificado implementaciones propias de Singleton, Factory Method, Observer ni Command. No conviene incluirlos como logros del equipo solo porque Spring o React los empleen internamente.
+- Singleton y Command quedan fuera del diseño que se sustenta aquí.
 - La tabla ficticia de auditoría del Sprint 1 no prueba por sí misma la persistencia real. El backend sí contiene aspecto, repositorio y consulta de auditoría; hay que demostrar cada parte por separado.

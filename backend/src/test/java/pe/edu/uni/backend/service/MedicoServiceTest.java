@@ -60,7 +60,7 @@ class MedicoServiceTest {
     @BeforeEach
     void setUp() {
         service = new MedicoService(medicoRepository, usuarioRepository, rolRepository,
-                centroRepository, especialidadRepository, passwordEncoder, almacenamientoFoto);
+                centroRepository, especialidadRepository, passwordEncoder, almacenamientoFoto, org.mockito.Mockito.mock(org.springframework.context.ApplicationEventPublisher.class));
     }
 
     // ---------- US-MED-03 ----------
@@ -80,7 +80,7 @@ class MedicoServiceTest {
         });
 
         RegistroMedicoResponse respuesta = service.registrar(
-                new RegistroMedicoRequest("Medico@UNI.edu.pe", "Secreta123", "cmp-12345"));
+                new RegistroMedicoRequest("Medico@UNI.edu.pe", "Secreta123", "cmp-12345", "Ana", "Quispe"));
 
         assertThat(respuesta.id()).isEqualTo(7);
         assertThat(respuesta.username()).isEqualTo(USERNAME);
@@ -102,7 +102,7 @@ class MedicoServiceTest {
         when(usuarioRepository.existsByUsername(USERNAME)).thenReturn(false);
         when(medicoRepository.existsByColegiatura("CMP-12345")).thenReturn(true);
 
-        assertThatThrownBy(() -> service.registrar(new RegistroMedicoRequest(USERNAME, "Secreta123", "CMP-12345")))
+        assertThatThrownBy(() -> service.registrar(new RegistroMedicoRequest(USERNAME, "Secreta123", "CMP-12345", "Ana", "Quispe")))
                 .isInstanceOf(ConflictoException.class);
         verify(medicoRepository, never()).save(any());
     }
@@ -111,7 +111,7 @@ class MedicoServiceTest {
     void registrarRechazaCorreoDuplicado() {
         when(usuarioRepository.existsByUsername(USERNAME)).thenReturn(true);
 
-        assertThatThrownBy(() -> service.registrar(new RegistroMedicoRequest(USERNAME, "Secreta123", "CMP-12345")))
+        assertThatThrownBy(() -> service.registrar(new RegistroMedicoRequest(USERNAME, "Secreta123", "CMP-12345", "Ana", "Quispe")))
                 .isInstanceOf(ConflictoException.class);
         verify(usuarioRepository, never()).save(any());
     }
@@ -127,7 +127,7 @@ class MedicoServiceTest {
         when(medicoRepository.save(medico)).thenReturn(medico);
 
         PerfilMedicoResponse perfil = service.actualizarPerfil(USERNAME,
-                new ActualizarPerfilRequest("  Cardiologo con 10 anios  ", 10, "CMP-12345", List.of(2)));
+                new ActualizarPerfilRequest("  Cardiologo con 10 anios  ", 10, "CMP-12345", List.of(2), null, null));
 
         assertThat(perfil.biografia()).isEqualTo("Cardiologo con 10 anios");
         assertThat(perfil.aniosExperiencia()).isEqualTo(10);
@@ -143,7 +143,7 @@ class MedicoServiceTest {
         when(medicoRepository.save(medico)).thenReturn(medico);
 
         PerfilMedicoResponse perfil = service.actualizarPerfil(USERNAME,
-                new ActualizarPerfilRequest("", null, "cmp-99999", List.of()));
+                new ActualizarPerfilRequest("", null, "cmp-99999", List.of(), null, null));
 
         assertThat(perfil.colegiatura()).isEqualTo("CMP-99999");
         assertThat(perfil.estadoColegiatura()).isEqualTo(EstadoColegiatura.PENDIENTE_VERIFICACION);
@@ -156,7 +156,7 @@ class MedicoServiceTest {
         when(medicoRepository.existsByColegiaturaAndIdNot("CMP-99999", 1)).thenReturn(true);
 
         assertThatThrownBy(() -> service.actualizarPerfil(USERNAME,
-                new ActualizarPerfilRequest("", null, "CMP-99999", List.of())))
+                new ActualizarPerfilRequest("", null, "CMP-99999", List.of(), null, null)))
                 .isInstanceOf(ConflictoException.class);
         verify(medicoRepository, never()).save(any());
     }
@@ -169,7 +169,7 @@ class MedicoServiceTest {
                 .thenReturn(List.of(especialidad(3, "Homeopatia", false)));
 
         assertThatThrownBy(() -> service.actualizarPerfil(USERNAME,
-                new ActualizarPerfilRequest("", null, "CMP-12345", List.of(3))))
+                new ActualizarPerfilRequest("", null, "CMP-12345", List.of(3), null, null)))
                 .isInstanceOf(ValidacionException.class)
                 .hasMessageContaining("no esta habilitada");
     }
@@ -184,7 +184,7 @@ class MedicoServiceTest {
         when(medicoRepository.save(medico)).thenReturn(medico);
 
         PerfilMedicoResponse perfil = service.actualizarPerfil(USERNAME,
-                new ActualizarPerfilRequest("", null, "CMP-12345", List.of(3)));
+                new ActualizarPerfilRequest("", null, "CMP-12345", List.of(3), null, null));
 
         assertThat(perfil.especialidadIds()).containsExactly(3);
     }
@@ -196,7 +196,7 @@ class MedicoServiceTest {
         when(especialidadRepository.findAllById(any())).thenReturn(List.of());
 
         assertThatThrownBy(() -> service.actualizarPerfil(USERNAME,
-                new ActualizarPerfilRequest("", null, "CMP-12345", List.of(99))))
+                new ActualizarPerfilRequest("", null, "CMP-12345", List.of(99), null, null)))
                 .isInstanceOf(ValidacionException.class)
                 .hasMessageContaining("no existe");
     }

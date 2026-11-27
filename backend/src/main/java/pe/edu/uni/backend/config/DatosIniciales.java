@@ -1,6 +1,7 @@
 package pe.edu.uni.backend.config;
 
 import org.springframework.boot.ApplicationArguments;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -31,6 +32,12 @@ public class DatosIniciales implements ApplicationRunner {
     private final UsuarioRepository usuarioRepository;
     private final EspecialidadRepository especialidadRepository;
     private final PasswordEncoder passwordEncoder;
+    @Value("${app.demo-admin-login.enabled:true}")
+    private boolean demoAdmin;
+    @Value("${app.admin.bootstrap-username:}")
+    private String adminUsuario;
+    @Value("${app.admin.bootstrap-password:}")
+    private String adminClave;
 
     public DatosIniciales(RolRepository rolRepository, UsuarioRepository usuarioRepository,
                           EspecialidadRepository especialidadRepository, PasswordEncoder passwordEncoder) {
@@ -51,14 +58,16 @@ public class DatosIniciales implements ApplicationRunner {
             }
         }
 
-        // Cuenta de desarrollo: en el perfil prod el login la rechaza (app.demo-admin-login.enabled=false).
-        if (!usuarioRepository.existsByUsername(ADMIN_USERNAME)) {
-            Usuario admin = new Usuario();
-            admin.setUsername(ADMIN_USERNAME);
-            admin.setPassword(passwordEncoder.encode("admin123"));
-            admin.setRol(rolRepository.findByNombre("ROLE_ADMIN").orElseThrow());
-            admin.setHabilitado(true);
-            usuarioRepository.save(admin);
+        if (demoAdmin) {
+            crearAdmin(ADMIN_USERNAME, "admin123");
+        }
+        if (!adminUsuario.isBlank() || !adminClave.isBlank()) {
+            String usuario = adminUsuario.strip().toLowerCase(java.util.Locale.ROOT);
+            if (usuario.isBlank() || usuario.length() > 100 || usuario.equals(ADMIN_USERNAME)
+                    || adminClave.length() < 16 || adminClave.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72) {
+                throw new IllegalStateException("Configuración inválida del administrador inicial");
+            }
+            crearAdmin(usuario, adminClave);
         }
 
         // El catalogo solo se siembra si esta vacio, para no recrear entradas que un administrador renombro.
@@ -70,5 +79,17 @@ public class DatosIniciales implements ApplicationRunner {
                 especialidadRepository.save(especialidad);
             }
         }
+    }
+
+    private void crearAdmin(String username, String password) {
+        if (!usuarioRepository.existsByUsername(username)) {
+            Usuario admin = new Usuario();
+            admin.setUsername(username);
+            admin.setPassword(passwordEncoder.encode(password));
+            admin.setRol(rolRepository.findByNombre("ROLE_ADMIN").orElseThrow());
+            admin.setHabilitado(true);
+            usuarioRepository.save(admin);
+        }
+
     }
 }

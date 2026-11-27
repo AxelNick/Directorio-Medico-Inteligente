@@ -11,7 +11,11 @@ export default tseslint.config(
     languageOptions: { globals: globals.browser },
   },
   {
-    files: ['scripts/**/*.mjs'],
+    files: ['scripts/**/*.mjs', 'playwright.config.mjs'],
     languageOptions: { globals: globals.node },
+  },
+  {
+    files: ['scripts/**/*.spec.mjs'],
+    languageOptions: { globals: globals.browser },
   },
 )
